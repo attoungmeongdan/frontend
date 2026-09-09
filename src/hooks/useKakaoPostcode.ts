@@ -1,17 +1,21 @@
 import { useCallback } from "react";
 
-const POSTCODE_SCRIPT_SRC = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+const POSTCODE_SCRIPT_SRC = "https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
 
-export interface DaumPostcodeData {
+export interface KakaoPostcodeData {
+  zonecode: string;
+  address: string;
   roadAddress: string;
   jibunAddress: string;
   userSelectedType: "R" | "J";
+  buildingName?: string;
 }
 
 declare global {
   interface Window {
-    daum?: {
-      Postcode: new (options: { oncomplete: (data: DaumPostcodeData) => void }) => {
+    // 카카오 지도 SDK도 window.kakao 를 쓰므로 Postcode 만 optional 로 선언해 병합되게 둔다
+    kakao?: {
+      Postcode?: new (options: { oncomplete: (data: KakaoPostcodeData) => void }) => {
         open: () => void;
       };
     };
@@ -20,7 +24,7 @@ declare global {
 
 function loadPostcodeScript() {
   return new Promise<void>((resolve, reject) => {
-    if (window.daum?.Postcode) {
+    if (window.kakao?.Postcode) {
       resolve();
       return;
     }
@@ -45,16 +49,19 @@ function loadPostcodeScript() {
   });
 }
 
-// 다음 우편번호 검색 팝업. 스크립트는 처음 열 때 한 번만 주입한다.
-export function useDaumPostcode() {
+// 카카오 우편번호 서비스 팝업. 스크립트는 처음 열 때 한 번만 주입한다.
+// https://postcode.map.kakao.com/guide
+export function useKakaoPostcode() {
   return useCallback(async (onComplete: (address: string) => void) => {
     await loadPostcodeScript();
 
-    if (!window.daum?.Postcode) {
+    const Postcode = window.kakao?.Postcode;
+
+    if (!Postcode) {
       throw new Error("우편번호 검색을 사용할 수 없어요.");
     }
 
-    new window.daum.Postcode({
+    new Postcode({
       oncomplete: (data) => {
         onComplete(data.userSelectedType === "R" ? data.roadAddress : data.jibunAddress);
       },

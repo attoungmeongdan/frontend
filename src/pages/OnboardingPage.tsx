@@ -8,7 +8,7 @@ import MascotSpeech from "@/components/ui/MascotSpeech";
 import ProgressIndicator from "@/components/ui/ProgressIndicator";
 import TextField from "@/components/ui/TextField";
 import { ONBOARDING_STEPS } from "@/constants/onboarding";
-import { useDaumPostcode } from "@/hooks/useDaumPostcode";
+import { useKakaoPostcode } from "@/hooks/useKakaoPostcode";
 import turtleCheer from "@/assets/mascots/turtle-cheer.png";
 import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
@@ -23,7 +23,7 @@ const INVALID_MESSAGE = {
 } as const;
 
 const ADDRESS_HELPER: Record<AddressStatus, string> = {
-  idle: "다음 우편번호 검색으로 찾을 수 있어요.",
+  idle: "우편번호 검색으로 찾을 수 있어요.",
   done: "주소 선택이 완료됐어요. 지도에서 집 기준으로 사용돼요.",
   fail: "주소 검색에 실패했어요. 잠시 후 다시 시도해 주세요.",
 };
@@ -34,7 +34,7 @@ function isPositiveNumber(value: string) {
 
 function OnboardingPage() {
   const navigate = useNavigate();
-  const openPostcode = useDaumPostcode();
+  const openPostcode = useKakaoPostcode();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
