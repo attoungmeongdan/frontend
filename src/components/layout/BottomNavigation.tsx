@@ -21,13 +21,13 @@ function BottomNavigation() {
                   <Icon
                     size={24}
                     aria-hidden
-                    className={isActive ? "text-brand-teal" : "text-text-secondary"}
+                    className={isActive ? "text-nav-active-icon" : "text-text-secondary"}
                   />
                   <span
                     className={
                       isActive
-                        ? "text-brand-teal-strong text-xs font-bold"
-                        : "text-text-secondary text-xs"
+                        ? "text-nav-active-label text-caption font-bold"
+                        : "text-text-secondary text-caption"
                     }
                   >
                     {label}

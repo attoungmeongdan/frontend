@@ -52,6 +52,12 @@
         "properties": ["color", "font", "font-size", "font-weight", "line-height", "text-align"]
       }
     ],
+    "custom-property-pattern": [
+      "^([a-z][a-z0-9]*)(-[a-z0-9]+)*(--[a-z][a-z0-9]*(-[a-z0-9]+)*)?$",
+      {
+        "message": "kebab-case로 작성하세요. Tailwind v4 테마 수식자(--text-body--line-height)만 예외입니다."
+      }
+    ],
     "no-empty-source": null,
     "block-no-empty": null,
     "color-hex-length": "short",

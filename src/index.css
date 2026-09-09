@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
-/* 디자인 토큰 */
+/* FitPle-v2.1.pen 디자인 토큰
+   - 색/반경/그림자/타이포는 디자인 파일 값을 그대로 옮김
+   - spacing 4/8/12/16/20/24/32/40/48 은 Tailwind 기본 4px 스케일과 동일해서 별도 정의 안 함 */
 @theme {
   --font-sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* 색 - 기본 */
   --color-surface-default: #fff;
   --color-surface-subtle: #f7f4f2;
   --color-brand-teal: #0f989a;
@@ -13,23 +17,84 @@
   --color-text-primary: #253131;
   --color-text-secondary: #667575;
   --color-border-default: #dce7e5;
+  --color-border-footer: #dde5e5;
+  --color-destructive: #e76751;
+  --color-camera-scrim: #253131b8;
+
+  /* 색 - 결과 전용 (동연령대 평균 대비). 결과 UI 밖에서는 쓰지 않고 항상 텍스트로 의미 병기 */
   --color-result-low: #e85252;
   --color-result-neutral: #253131;
   --color-result-high: #3182ce;
-  --color-destructive: #e76751;
-  --color-camera-scrim: #253131b8;
+
+  /* 색 - alias. 역할로 쓰고 원본 색을 직접 참조하지 않는다 */
+  --color-action-primary-bg: var(--color-action-orange);
+  --color-action-primary-fg: #fff;
+  --color-action-secondary-fg: var(--color-brand-teal-strong);
+  --color-nav-active-icon: var(--color-brand-teal);
+  --color-nav-active-label: var(--color-brand-teal-strong);
+  --color-focus-ring: var(--color-brand-teal-strong);
+  --color-field-border-strong: var(--color-text-secondary);
+
+  /* 타이포 - 기본 스케일 */
+  --text-display: 32px;
+  --text-display--line-height: 40px;
+  --text-display--font-weight: 700;
+  --text-heading-1: 28px;
+  --text-heading-1--line-height: 36px;
+  --text-heading-1--font-weight: 700;
+  --text-heading-2: 22px;
+  --text-heading-2--line-height: 30px;
+  --text-heading-2--font-weight: 700;
+  --text-title: 20px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 600;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 400;
+  --text-body-small: 14px;
+  --text-body-small--line-height: 20px;
+  --text-body-small--font-weight: 400;
+  --text-caption: 12px;
+  --text-caption--line-height: 18px;
+  --text-caption--font-weight: 400;
+  --text-button: 16px;
+  --text-button--line-height: 20px;
+  --text-button--font-weight: 600;
+  --text-camera-number: 64px;
+  --text-camera-number--line-height: 72px;
+  --text-camera-number--font-weight: 700;
+
+  /* 타이포 - 화면 작업에서 추가된 것 */
+  --text-guide: 15px;
+  --text-guide--line-height: 22px;
+  --text-guide--font-weight: 400;
+  --text-card-label: 14px;
+  --text-card-label--line-height: 21px;
+  --text-card-label--font-weight: 600;
+  --text-note-title: 13px;
+  --text-note-title--line-height: 20px;
+  --text-note-title--font-weight: 600;
+
+  /* 반경 */
   --radius-sm: 12px;
   --radius-input: 16px;
   --radius-bubble: 16px;
   --radius-card: 24px;
   --radius-pill: 999px;
 
-  /* 모바일 셸 최대 폭 */
+  /* 그림자 */
+  --shadow-card: 0 4px 16px #2531310f;
+  --shadow-sheet: 0 -4px 24px #25313114;
+
+  /* 크기 */
+  --spacing-control: 52px;
+  --spacing-exercise-icon: 72px;
   --container-shell: 430px;
 }
 
 @layer base {
   body {
     color: var(--color-text-primary);
+    font-family: var(--font-sans);
   }
 }

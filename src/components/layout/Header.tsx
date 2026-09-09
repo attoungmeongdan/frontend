@@ -31,7 +31,7 @@ function Header({ title, showBack = false, backTo }: HeaderConfig) {
       </div>
 
       {title ? (
-        <h1 className="text-text-primary text-xl font-semibold">{title}</h1>
+        <h1 className="text-text-primary text-title">{title}</h1>
       ) : (
         <img src={wordmark} alt="Fittle" className="h-7 w-21 object-contain" />
       )}

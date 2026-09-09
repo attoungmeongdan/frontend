@@ -10,7 +10,7 @@ function AppLayout() {
 
   return (
     <div className="bg-surface-subtle flex h-dvh justify-center">
-      <div className="bg-surface-default flex h-full w-full max-w-(--container-shell) flex-col overflow-hidden">
+      <div className="bg-surface-default max-w-shell flex h-full w-full flex-col overflow-hidden">
         {header !== false && (
           <Header title={header.title} showBack={header.showBack} backTo={header.backTo} />
         )}
