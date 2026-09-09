@@ -15,7 +15,12 @@ import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 type Gender = "female" | "male";
 type AddressStatus = "idle" | "done" | "fail";
 
-const NUMBER_ERROR = "나이를 입력해 주세요.";
+// 숫자 아닌 값을 입력했을 때 단계별 오류 문구
+const INVALID_MESSAGE = {
+  age: "나이를 입력해 주세요.",
+  height: "키를 입력해 주세요.",
+  weight: "몸무게를 입력해 주세요.",
+} as const;
 
 const ADDRESS_HELPER: Record<AddressStatus, string> = {
   idle: "다음 우편번호 검색으로 찾을 수 있어요.",
@@ -78,15 +83,15 @@ function OnboardingPage() {
 
   const handleNext = () => {
     if (step.id === "age" && !isPositiveNumber(age)) {
-      setError(NUMBER_ERROR);
+      setError(INVALID_MESSAGE.age);
       return;
     }
     if (step.id === "height" && !isPositiveNumber(height)) {
-      setError(NUMBER_ERROR);
+      setError(INVALID_MESSAGE.height);
       return;
     }
     if (step.id === "weight" && !isPositiveNumber(weight)) {
-      setError(NUMBER_ERROR);
+      setError(INVALID_MESSAGE.weight);
       return;
     }
 
@@ -104,7 +109,9 @@ function OnboardingPage() {
     isSubmitting ||
     (step.id === "age" && age.trim() === "") ||
     (step.id === "gender" && gender === null) ||
-    (step.id === "address" && address === "");
+    (step.id === "address" && address === "") ||
+    (step.id === "height" && height.trim() === "") ||
+    (step.id === "weight" && weight.trim() === "");
 
   let mascot = step.mascot;
   let message = step.message;
