@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+/* 디자인 토큰 */
+@theme {
+  --font-sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --color-surface-default: #fff;
+  --color-surface-subtle: #f7f4f2;
+  --color-brand-teal: #0f989a;
+  --color-brand-teal-strong: #136b6b;
+  --color-brand-mint: #73c6ae;
+  --color-action-orange: #ff8a1f;
+  --color-accent-yellow: #ffc245;
+  --color-text-primary: #253131;
+  --color-text-secondary: #667575;
+  --color-border-default: #dce7e5;
+  --color-result-low: #e85252;
+  --color-result-neutral: #253131;
+  --color-result-high: #3182ce;
+  --color-destructive: #e76751;
+  --color-camera-scrim: #253131b8;
+  --radius-sm: 12px;
+  --radius-input: 16px;
+  --radius-bubble: 16px;
+  --radius-card: 24px;
+  --radius-pill: 999px;
+
+  /* 모바일 셸 최대 폭 */
+  --container-shell: 430px;
+}
+
+@layer base {
+  body {
+    color: var(--color-text-primary);
+  }
+}
