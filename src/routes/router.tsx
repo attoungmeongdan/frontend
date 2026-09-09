@@ -2,15 +2,27 @@ import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import CalendarPage from "@/pages/CalendarPage";
 import HomePage from "@/pages/HomePage";
+import LoginPage from "@/pages/LoginPage";
 import MapPage from "@/pages/MapPage";
 import MyPage from "@/pages/MyPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import SplashPage from "@/pages/SplashPage";
 import type { LayoutHandle } from "@/types/layout";
 
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
+      {
+        path: "/splash",
+        element: <SplashPage />,
+        handle: { header: false, fullBleed: true } satisfies LayoutHandle,
+      },
+      {
+        path: "/login",
+        element: <LoginPage />,
+        handle: { header: false, fullBleed: true } satisfies LayoutHandle,
+      },
       {
         path: "/",
         element: <HomePage />,

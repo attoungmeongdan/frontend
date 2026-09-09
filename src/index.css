@@ -35,6 +35,11 @@
   --color-focus-ring: var(--color-brand-teal-strong);
   --color-field-border-strong: var(--color-text-secondary);
 
+  /* 색 - 외부 브랜드. 디자인 시스템 색이 아니므로 소셜 로그인 버튼 밖에서 쓰지 않는다 */
+  --color-kakao-yellow: #fee500;
+  --color-kakao-label: #181600;
+  --color-google-border: #e6e7e9;
+
   /* 타이포 - 기본 스케일 */
   --text-display: 32px;
   --text-display--line-height: 40px;
