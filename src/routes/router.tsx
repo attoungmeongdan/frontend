@@ -6,6 +6,7 @@ import LoginPage from "@/pages/LoginPage";
 import MapPage from "@/pages/MapPage";
 import MyPage from "@/pages/MyPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import OnboardingPage from "@/pages/OnboardingPage";
 import SplashPage from "@/pages/SplashPage";
 import type { LayoutHandle } from "@/types/layout";
 
@@ -21,6 +22,11 @@ export const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginPage />,
+        handle: { header: false, fullBleed: true } satisfies LayoutHandle,
+      },
+      {
+        path: "/onboarding",
+        element: <OnboardingPage />,
         handle: { header: false, fullBleed: true } satisfies LayoutHandle,
       },
       {

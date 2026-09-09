@@ -35,6 +35,15 @@
   --color-focus-ring: var(--color-brand-teal-strong);
   --color-field-border-strong: var(--color-text-secondary);
 
+  /* 입력 오류 피드백. 디자인상 빨강이 아니라 청록이다 (빨강은 결과 UI 전용) */
+  --color-feedback-error: var(--color-brand-teal-strong);
+
+  /* 색 - 온보딩 Tip 카드 (투명도 섞인 값이라 별도 토큰)
+     이름에 note 를 쓰면 --text-note-title 타이포 토큰과 text-* 유틸이 충돌하므로 tip 으로 둔다 */
+  --color-tip-label: #136b6b99;
+  --color-tip-title: #0f989a99;
+  --color-tip-desc: #667575bf;
+
   /* 색 - 외부 브랜드. 디자인 시스템 색이 아니므로 소셜 로그인 버튼 밖에서 쓰지 않는다 */
   --color-kakao-yellow: #fee500;
   --color-kakao-label: #181600;

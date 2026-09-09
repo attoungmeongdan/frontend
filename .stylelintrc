@@ -5,10 +5,6 @@
     {
       "files": ["*.css"],
       "customSyntax": "postcss"
-    },
-    {
-      "files": ["*.ts", "*.tsx"],
-      "customSyntax": "@stylelint/postcss-css-in-js"
     }
   ],
   "rules": {

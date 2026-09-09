@@ -3,11 +3,18 @@ import { useNavigate } from "react-router-dom";
 import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
 
-// UI/Header (swKmr) — 높이 56, 좌우 44x44 슬롯, 중앙 워드마크 또는 타이틀
-function Header({ title, showBack = false, backTo }: HeaderConfig) {
+type HeaderProps = HeaderConfig & {
+  onBack?: () => void;
+};
+
+function Header({ title, showBack = false, backTo, onBack }: HeaderProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (backTo) {
       navigate(backTo);
       return;
