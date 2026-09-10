@@ -6,6 +6,7 @@ import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import MapPage from "@/pages/MapPage";
 import MeasurePage from "@/pages/MeasurePage";
+import MeasurementAnalysisPage from "@/pages/MeasurementAnalysisPage";
 import MyPage from "@/pages/MyPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import OAuthCallbackPage from "@/pages/OAuthCallbackPage";
@@ -59,6 +60,13 @@ export const router = createBrowserRouter([
           header: false,
           fullBleed: true,
           fullViewport: true,
+        } satisfies LayoutHandle,
+      },
+      {
+        path: "/measurements/:id/analysis",
+        element: <MeasurementAnalysisPage />,
+        handle: {
+          header: { title: "측정 분석", showBack: true, backTo: "/" },
         } satisfies LayoutHandle,
       },
       {
