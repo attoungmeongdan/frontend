@@ -1,23 +1,6 @@
 // 카카오맵 JS SDK 중 이 프로젝트에서 쓰는 API만 선언한다.
 // 공식 타입 패키지가 없어 필요한 만큼만 정의한다.
 
-declare namespace kakao {
-  /** 다음 우편번호 서비스가 돌려주는 주소 데이터 */
-  interface PostcodeData {
-    zonecode: string;
-    address: string;
-    roadAddress: string;
-    jibunAddress: string;
-    userSelectedType: "R" | "J";
-    buildingName?: string;
-  }
-
-  /** 우편번호 스크립트는 지도 SDK와 별개로 로드되므로 optional 이다 */
-  const Postcode:
-    | (new (options: { oncomplete: (data: PostcodeData) => void }) => { open: () => void })
-    | undefined;
-}
-
 declare namespace kakao.maps {
   class LatLng {
     constructor(lat: number, lng: number);
@@ -79,6 +62,24 @@ declare namespace kakao.maps {
         callback: (result: AddressSearchResult[], status: string) => void,
       ): void;
     }
+  }
+}
+
+// 우편번호 서비스는 지도 SDK와 별개 스크립트지만 같은 kakao 전역에 붙는다.
+// https://postcode.map.kakao.com/guide
+declare namespace kakao {
+  interface PostcodeData {
+    zonecode: string;
+    address: string;
+    roadAddress: string;
+    jibunAddress: string;
+    userSelectedType: "R" | "J";
+    buildingName?: string;
+  }
+
+  class Postcode {
+    constructor(options: { oncomplete: (data: PostcodeData) => void });
+    open(): void;
   }
 }
 
