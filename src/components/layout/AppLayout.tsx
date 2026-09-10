@@ -14,7 +14,12 @@ function AppLayout() {
         className={`bg-surface-default flex h-full w-full flex-col overflow-hidden ${fullViewport ? "" : "max-w-shell"}`}
       >
         {header !== false && (
-          <Header title={header.title} showBack={header.showBack} backTo={header.backTo} />
+          <Header
+            title={header.title}
+            showBack={header.showBack}
+            showClose={header.showClose}
+            backTo={header.backTo}
+          />
         )}
 
         <main

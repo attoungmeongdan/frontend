@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import CalendarPage from "@/pages/CalendarPage";
+import ExerciseCompletePage from "@/pages/ExerciseCompletePage";
 import ExercisePage from "@/pages/ExercisePage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
@@ -54,6 +55,14 @@ export const router = createBrowserRouter([
         } satisfies LayoutHandle,
       },
       {
+        path: "/exercise/:type/complete",
+        element: <ExerciseCompletePage />,
+        handle: {
+          header: { title: "운동 마무리", showClose: true },
+          bottomNav: false,
+        } satisfies LayoutHandle,
+      },
+      {
         path: "/measure",
         element: <MeasurePage />,
         handle: {
@@ -66,7 +75,7 @@ export const router = createBrowserRouter([
         path: "/measurements/:id/analysis",
         element: <MeasurementAnalysisPage />,
         handle: {
-          header: { title: "측정 분석", showBack: true, backTo: "/" },
+          header: { title: "측정 분석", showClose: true },
         } satisfies LayoutHandle,
       },
       {
