@@ -61,10 +61,13 @@ export async function refreshAccessToken() {
 
 // 로그아웃
 export async function logout() {
-  // 서버 응답을 기다리지 않고 먼저 끊는다.
+  // 토큰을 먼저 지우면 Authorization 헤더 없이 요청이 나가 서버가 500 을 준다.
+  // 요청을 먼저 보내고, 성공 여부와 무관하게 세션을 끊는다.
   // 진행 중인 갱신이 있어도 세대 번호가 올라가 그 결과는 저장되지 않는다.
-  clearAccessToken();
-  invalidatePendingRefresh();
-
-  await axiosInstance.post<CommonResponse<void>>("/api/v1/auth/logout");
+  try {
+    await axiosInstance.post<CommonResponse<void>>("/api/v1/auth/logout");
+  } finally {
+    clearAccessToken();
+    invalidatePendingRefresh();
+  }
 }
