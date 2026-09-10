@@ -1,4 +1,4 @@
-import { axiosInstance } from "@/apis/axiosInstance";
+import { axiosInstance, invalidatePendingRefresh } from "@/apis/axiosInstance";
 import { clearAccessToken } from "@/apis/tokenStore";
 import type { CommonResponse } from "@/types/api";
 
@@ -61,9 +61,10 @@ export async function refreshAccessToken() {
 
 // 로그아웃
 export async function logout() {
-  try {
-    await axiosInstance.post<CommonResponse<void>>("/api/v1/auth/logout");
-  } finally {
-    clearAccessToken();
-  }
+  // 서버 응답을 기다리지 않고 먼저 끊는다.
+  // 진행 중인 갱신이 있어도 세대 번호가 올라가 그 결과는 저장되지 않는다.
+  clearAccessToken();
+  invalidatePendingRefresh();
+
+  await axiosInstance.post<CommonResponse<void>>("/api/v1/auth/logout");
 }
