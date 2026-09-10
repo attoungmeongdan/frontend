@@ -13,19 +13,20 @@ function getFirstWeekday(year: number, month: number) {
   return new Date(year, month - 1, 1).getDay();
 }
 
+/** 날짜별 수행 종목 수를 빠르게 찾기 위한 표 */
+function toCountByDay({ exercisedDays }: MonthlyActivity) {
+  return new Map(exercisedDays.map(({ day, count }) => [day, count]));
+}
+
 /**
  * 당월 달력 그리드를 주 단위로 만든다.
  * 앞뒤 빈 칸은 date 가 null 이며, 전월·익월 날짜는 표시하지 않는다.
  */
-export function buildMonthGrid({
-  year,
-  month,
-  today,
-  exercisedDays,
-}: MonthlyActivity): DayCell[][] {
+export function buildMonthGrid(activity: MonthlyActivity): DayCell[][] {
+  const { year, month, today } = activity;
   const lastDate = getLastDate(year, month);
   const leadingBlanks = getFirstWeekday(year, month);
-  const exercised = new Set(exercisedDays);
+  const countByDay = toCountByDay(activity);
   const weekCount = Math.ceil((leadingBlanks + lastDate) / DAYS_IN_WEEK);
 
   return Array.from({ length: weekCount }, (_, week) =>
@@ -36,22 +37,25 @@ export function buildMonthGrid({
       return {
         date: isInMonth ? date : null,
         isToday: isInMonth && date === today,
-        isExercised: isInMonth && exercised.has(date),
         isFuture: isInMonth && date > today,
+        exerciseCount: isInMonth ? (countByDay.get(date) ?? 0) : 0,
       };
     }),
   );
 }
 
-/** 이번 달 운동 실행률. 미래 날짜는 분모에서 제외하고, 1일에는 산출하지 않는다 */
+/**
+ * 이번 달 운동 실행률. 미래 날짜는 분모에서 제외한다.
+ * 1일에 아직 운동하지 않았을 때만 산출하지 않는다. 하루치로 0% 를 보여줄 이유가 없다.
+ */
 export function calculateMonthlyRate({ today, exercisedDays }: MonthlyActivity): MonthlyRate {
-  const exercisedCount = exercisedDays.filter((day) => day <= today).length;
-  const isMonthStart = today === 1;
+  const exercisedCount = exercisedDays.filter(({ day }) => day <= today).length;
+  const isUnavailable = today === 1 && exercisedCount === 0;
 
   return {
     elapsedDays: today,
     exercisedCount,
-    percent: isMonthStart ? null : Math.round((exercisedCount / today) * 100),
+    percent: isUnavailable ? null : Math.round((exercisedCount / today) * 100),
   };
 }
 
@@ -59,7 +63,7 @@ export function calculateMonthlyRate({ today, exercisedDays }: MonthlyActivity):
 export function selectMascotMessage({ today, exercisedDays }: MonthlyActivity): string {
   if (today === 1) return MASCOT_MESSAGES.monthStart;
 
-  const exercised = new Set(exercisedDays);
+  const exercised = new Set(exercisedDays.map(({ day }) => day));
   const didToday = exercised.has(today);
   const didYesterday = exercised.has(today - 1);
 
