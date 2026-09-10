@@ -1,9 +1,11 @@
 import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import CalendarPage from "@/pages/CalendarPage";
+import ExercisePage from "@/pages/ExercisePage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import MapPage from "@/pages/MapPage";
+import MeasurePage from "@/pages/MeasurePage";
 import MyPage from "@/pages/MyPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import OnboardingPage from "@/pages/OnboardingPage";
@@ -33,6 +35,16 @@ export const router = createBrowserRouter([
         path: "/",
         element: <HomePage />,
         handle: { bottomNav: true } satisfies LayoutHandle,
+      },
+      {
+        path: "/exercise/:type",
+        element: <ExercisePage />,
+        handle: { header: { showBack: true, backTo: "/" } } satisfies LayoutHandle,
+      },
+      {
+        path: "/measure",
+        element: <MeasurePage />,
+        handle: { header: { showBack: true, backTo: "/" } } satisfies LayoutHandle,
       },
       {
         path: "/calendar",
