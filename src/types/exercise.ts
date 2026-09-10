@@ -87,7 +87,7 @@ export interface ExerciseSessionMock {
 export type ApiExerciseType = "CHAIR_STAND" | "SIT_UP" | "PUSH_UP" | "PLANK";
 
 export interface MeasurementProgress {
-  measurementGroupId: string;
+  measurementGroupId: string | null;
   completedExercises: ApiExerciseType[];
   nextExerciseType: ApiExerciseType;
   completed: boolean;
