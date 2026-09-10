@@ -22,31 +22,37 @@ declare global {
   }
 }
 
+// 진행 중인 로딩을 들고 있어서 동시 호출이 스크립트를 중복 주입하지 않게 한다.
+// DOM에서 기존 script 를 찾아 리스너를 다시 붙이면, 이미 error 가 끝난 요소에는
+// 이벤트가 다시 오지 않아 Promise 가 영영 pending 으로 남는다.
+let pendingLoad: Promise<void> | null = null;
+
 function loadPostcodeScript() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.kakao?.Postcode) {
-      resolve();
-      return;
-    }
+  if (window.kakao?.Postcode) {
+    return Promise.resolve();
+  }
 
-    const fail = () => reject(new Error("우편번호 스크립트를 불러오지 못했어요."));
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${POSTCODE_SCRIPT_SRC}"]`,
-    );
+  if (pendingLoad) {
+    return pendingLoad;
+  }
 
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", fail);
-      return;
-    }
-
+  pendingLoad = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = POSTCODE_SCRIPT_SRC;
     script.async = true;
+
     script.addEventListener("load", () => resolve());
-    script.addEventListener("error", fail);
+    script.addEventListener("error", () => {
+      // 실패한 요소와 기억을 함께 버려야 다음 호출이 새로 시도할 수 있다
+      script.remove();
+      pendingLoad = null;
+      reject(new Error("우편번호 스크립트를 불러오지 못했어요."));
+    });
+
     document.body.appendChild(script);
   });
+
+  return pendingLoad;
 }
 
 // 카카오 우편번호 서비스 팝업. 스크립트는 처음 열 때 한 번만 주입한다.
