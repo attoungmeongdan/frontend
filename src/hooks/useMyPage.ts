@@ -28,12 +28,16 @@ export function useAccountActions({ onError }: AccountActionOptions) {
 
   const goToLogin = markSignedOut;
 
+  // logout 은 finally 로 요청 성공 여부와 무관하게 토큰을 지운다.
+  // 성공 경로에서만 상태를 바꾸면 실패했을 때 토큰은 없는데 authenticated 로 남아
+  // 가드가 보호 화면을 유지하고 이후 요청이 전부 401 이 된다
   const logoutMutation = useMutation({
     mutationFn: logout,
-    onSuccess: goToLogin,
     onError: () => onError(ACCOUNT_ACTION_ERROR.logout),
+    onSettled: goToLogin,
   });
 
+  // 탈퇴는 요청이 성공해야 토큰을 지운다. 실패하면 계정이 남아 있으므로 로그인 상태도 유지한다
   const withdrawMutation = useMutation({
     mutationFn: withdraw,
     onSuccess: goToLogin,
