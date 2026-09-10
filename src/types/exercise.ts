@@ -14,3 +14,30 @@ export interface ExerciseSessionMock {
   count: number;
   elapsedSeconds: number;
 }
+
+/** 서버가 쓰는 운동 종목 코드 */
+export type ApiExerciseType = "CHAIR_STAND" | "SIT_UP" | "PUSH_UP" | "PLANK";
+
+export interface MeasurementProgress {
+  measurementGroupId: string;
+  completedExercises: ApiExerciseType[];
+  nextExerciseType: ApiExerciseType;
+  completed: boolean;
+}
+
+export interface MeasurementExerciseValue {
+  value: number;
+  unit: "COUNT" | "SECOND";
+}
+
+export interface MeasurementRecord {
+  measurementGroupId: string;
+  measuredAt: string;
+  totalScore: number;
+  exercises: Partial<Record<ApiExerciseType, MeasurementExerciseValue>>;
+}
+
+export interface MeasurementHistory {
+  today: MeasurementRecord | null;
+  previousMeasurements: MeasurementRecord[];
+}
