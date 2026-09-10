@@ -44,22 +44,6 @@ declare namespace kakao.maps {
   }
 
   function load(callback: () => void): void;
-
-  namespace services {
-    const Status: { OK: string; ZERO_RESULT: string; ERROR: string };
-
-    interface AddressSearchResult {
-      x: string;
-      y: string;
-    }
-
-    class Geocoder {
-      addressSearch(
-        address: string,
-        callback: (result: AddressSearchResult[], status: string) => void,
-      ): void;
-    }
-  }
 }
 
 // https://postcode.map.kakao.com/guide

@@ -37,7 +37,7 @@ function injectSdk(): Promise<typeof kakao> {
     const script = document.createElement("script");
     script.id = SDK_SCRIPT_ID;
     script.async = true;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
     script.addEventListener("load", handleLoad, { once: true });
     script.addEventListener(
       "error",
@@ -60,20 +60,4 @@ export function loadKakaoMapSdk(): Promise<typeof kakao> {
   });
 
   return sdkPromise;
-}
-
-/** 주소를 좌표로 변환한다. 결과가 없으면 실패로 처리한다 */
-export function geocodeAddress(sdk: typeof kakao, address: string) {
-  return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
-    const geocoder = new sdk.maps.services.Geocoder();
-
-    geocoder.addressSearch(address, (results, status) => {
-      if (status !== sdk.maps.services.Status.OK || results.length === 0) {
-        reject(new Error("주소를 좌표로 변환하지 못했습니다."));
-        return;
-      }
-
-      resolve({ lat: Number(results[0].y), lng: Number(results[0].x) });
-    });
-  });
 }
