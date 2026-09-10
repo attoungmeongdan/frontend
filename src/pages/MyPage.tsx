@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import turtleSad from "@/assets/mascots/turtle-sad.png";
 import PersonalInfoList from "@/components/mypage/PersonalInfoList";
@@ -21,6 +21,8 @@ const TOAST_DURATION = 3000;
 function MyPage() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // 사라질 때 페이드를 주려면 opacity 를 먼저 0 으로 만든 뒤 전환이 끝나고 내려야 한다
+  const [isToastVisible, setIsToastVisible] = useState(false);
 
   const profileQuery = useMyProfile();
   const { logoutMutation, withdrawMutation } = useAccountActions({ onError: setToastMessage });
@@ -36,7 +38,9 @@ function MyPage() {
   useEffect(() => {
     if (toastMessage === null) return;
 
-    const timer = setTimeout(() => setToastMessage(null), TOAST_DURATION);
+    setIsToastVisible(true);
+
+    const timer = setTimeout(() => setIsToastVisible(false), TOAST_DURATION);
 
     return () => clearTimeout(timer);
   }, [toastMessage]);
@@ -115,9 +119,20 @@ function MyPage() {
       )}
 
       {toastMessage && (
-        <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-5">
-          <div className="max-w-shell w-full">
-            <Toast message={toastMessage} />
+        <div
+          onTransitionEnd={() => {
+            if (!isToastVisible) setToastMessage(null);
+          }}
+          className={`pointer-events-none fixed inset-x-0 bottom-[134px] z-50 flex justify-center px-5 transition-opacity duration-500 motion-reduce:transition-none ${
+            isToastVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="w-full max-w-[378px]">
+            <Toast
+              message={toastMessage}
+              icon={TriangleAlert}
+              iconClassName="text-feedback-error"
+            />
           </div>
         </div>
       )}
