@@ -50,7 +50,13 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
     for (const facility of facilities) {
       const element = document.createElement("div");
       const root = createRoot(element);
-      root.render(<FacilityMarker isSelected={false} onSelect={() => onSelect(facility.id)} />);
+      root.render(
+        <FacilityMarker
+          label={facility.name}
+          isSelected={false}
+          onSelect={() => onSelect(facility.id)}
+        />,
+      );
       roots.set(facility.id, root);
       attach(facility.coordinates, element);
     }
@@ -71,6 +77,7 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
         .get(facility.id)
         ?.render(
           <FacilityMarker
+            label={facility.name}
             isSelected={facility.id === selectedId}
             onSelect={() => onSelect(facility.id)}
           />,
@@ -84,6 +91,7 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
 function HomeMarker() {
   return (
     <div
+      role="img"
       aria-label="집"
       className="bg-brand-teal-strong border-brand-teal-strong flex size-9 items-center justify-center rounded-full border"
     >
@@ -92,10 +100,19 @@ function HomeMarker() {
   );
 }
 
-function FacilityMarker({ isSelected, onSelect }: { isSelected: boolean; onSelect: () => void }) {
+function FacilityMarker({
+  label,
+  isSelected,
+  onSelect,
+}: {
+  label: string;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
   return (
     <button
       type="button"
+      aria-label={label}
       onClick={onSelect}
       aria-pressed={isSelected}
       className={`border-brand-teal-strong flex size-9 items-center justify-center rounded-full border ${
