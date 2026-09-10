@@ -17,7 +17,7 @@ export const MAP_MESSAGES = {
     title: "5km 안에 공공 체육시설이 없어요",
     description: "제공 데이터 기준이에요.\n범위 밖 시설은 표시하지 않아요.",
   },
-  geocodeFailed: {
+  addressUnavailable: {
     title: "주소 위치를 찾지 못했어요",
     description: "온보딩에 저장한 주소를 확인한 뒤\n다시 시도해 주세요.",
     action: "다시 시도하기",
