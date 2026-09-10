@@ -23,20 +23,16 @@ function injectSdk(): Promise<typeof kakao> {
       window.kakao.maps.load(() => resolve(window.kakao!));
     };
 
-    const existing = document.getElementById(SDK_SCRIPT_ID) as HTMLScriptElement | null;
-
-    if (existing) {
-      // 이미 삽입돼 있어도 로드가 끝났다는 보장은 없으므로 이벤트를 기다린다
-      existing.addEventListener("load", handleLoad, { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("카카오맵 SDK 를 불러오지 못했습니다.")),
-        {
-          once: true,
-        },
-      );
+    // load / error 는 지나가면 끝인 이벤트라 나중에 리스너를 붙여도 잡지 못한다.
+    // 이미 끝난 결과는 이벤트 대신 window.kakao 로 확인한다
+    if (window.kakao) {
+      handleLoad();
       return;
     }
+
+    // 남아 있는 스크립트는 직전 시도가 실패했다는 뜻이다.
+    // 재사용하면 이벤트가 다시 오지 않아 Promise 가 끝나지 않으므로 버리고 새로 넣는다
+    document.getElementById(SDK_SCRIPT_ID)?.remove();
 
     const script = document.createElement("script");
     script.id = SDK_SCRIPT_ID;
