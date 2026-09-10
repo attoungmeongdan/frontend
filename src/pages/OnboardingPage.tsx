@@ -7,8 +7,14 @@ import Button from "@/components/ui/Button";
 import MascotSpeech from "@/components/ui/MascotSpeech";
 import ProgressIndicator from "@/components/ui/ProgressIndicator";
 import TextField from "@/components/ui/TextField";
+import { oauthSignup } from "@/apis/auth";
 import { ONBOARDING_STEPS } from "@/constants/onboarding";
-import { useKakaoPostcode } from "@/hooks/useKakaoPostcode";
+import {
+  getSelectedAddress,
+  useKakaoPostcode,
+  type KakaoPostcodeData,
+} from "@/hooks/useKakaoPostcode";
+import { saveAccessToken } from "@/utils/token";
 import turtleCheer from "@/assets/mascots/turtle-cheer.png";
 import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
@@ -45,6 +51,7 @@ function OnboardingPage() {
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [address, setAddress] = useState("");
+  const [addressDetail, setAddressDetail] = useState<KakaoPostcodeData | null>(null);
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
@@ -54,7 +61,8 @@ function OnboardingPage() {
   const handleSearchAddress = async () => {
     try {
       await openPostcode((selected) => {
-        setAddress(selected);
+        setAddress(getSelectedAddress(selected));
+        setAddressDetail(selected);
         setAddressStatus("done");
       });
     } catch {
@@ -75,10 +83,30 @@ function OnboardingPage() {
     handlePrev();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    // TODO: 온보딩 저장 API 연동. 지금은 저장 없이 홈으로 이동한다.
-    navigate("/", { replace: true });
+
+    try {
+      const { accessToken } = await oauthSignup({
+        nickname: name,
+        age: Number(age),
+        gender: gender === "female" ? "FEMALE" : "MALE",
+        height: Number(height),
+        weight: Number(weight),
+        address: addressDetail
+          ? {
+              roadNameAddress: addressDetail.roadAddress,
+              lotNumberAddress: addressDetail.jibunAddress,
+            }
+          : undefined,
+      });
+
+      saveAccessToken(accessToken);
+      navigate("/", { replace: true });
+    } catch {
+      setIsSubmitting(false);
+      setError("저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    }
   };
 
   const handleNext = () => {
@@ -98,7 +126,7 @@ function OnboardingPage() {
     setError(null);
 
     if (isLastStep) {
-      handleSubmit();
+      void handleSubmit();
       return;
     }
 
