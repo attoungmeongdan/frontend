@@ -2,15 +2,15 @@ import { Building2, House } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RADIUS_LABEL, SEARCH_RADIUS_METERS } from "@/constants/map";
-import type { Coordinates, FacilityWithDistance } from "@/types/map";
-import { offsetCoordinates } from "@/utils/geo";
+import type { FacilityMarker } from "@/apis/facility";
+import type { Coordinates } from "@/types/map";
 
 interface MapMarkersProps {
   map: kakao.maps.Map | null;
   home: Coordinates | null;
-  facilities: FacilityWithDistance[];
-  selectedId: string | null;
-  onSelect: (facilityId: string) => void;
+  facilities: FacilityMarker[];
+  selectedId: number | null;
+  onSelect: (facilityId: number) => void;
 }
 
 // 지도 위 마커. 집·공공시설 2종만 쓴다
@@ -45,7 +45,9 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
     const labelRoot = createRoot(labelElement);
     labelRoot.render(<RadiusLabel />);
     roots.set("radius-label", labelRoot);
-    attach(offsetCoordinates(home, SEARCH_RADIUS_METERS, 0), labelElement);
+    // 반경 라벨은 원의 북쪽 끝에 둔다
+    const latDelta = SEARCH_RADIUS_METERS / 111_320;
+    attach({ lat: home.lat + latDelta, lng: home.lng }, labelElement);
 
     for (const facility of facilities) {
       const element = document.createElement("div");
@@ -57,8 +59,8 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
           onSelect={() => onSelect(facility.id)}
         />,
       );
-      roots.set(facility.id, root);
-      attach(facility.coordinates, element);
+      roots.set(String(facility.id), root);
+      attach({ lat: facility.lat, lng: facility.lng }, element);
     }
 
     return () => {
@@ -74,7 +76,7 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
 
     for (const facility of facilities) {
       roots
-        .get(facility.id)
+        .get(String(facility.id))
         ?.render(
           <FacilityMarker
             label={facility.name}
