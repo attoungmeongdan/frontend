@@ -60,6 +60,7 @@ export const router = createBrowserRouter([
         handle: {
           header: { title: "지도", showBack: true, backTo: "/" },
           bottomNav: true,
+          fullBleed: true,
         } satisfies LayoutHandle,
       },
       {
