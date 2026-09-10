@@ -142,6 +142,7 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
           {workout.diagnostics.lastReceivedAt
             ? new Date(workout.diagnostics.lastReceivedAt).toLocaleTimeString()
             : "-"}
+          {` · sid:${workout.diagnostics.sessionId ?? "-"} · path:${workout.diagnostics.webSocketPath ?? "-"} · ticket-len:${workout.socketTicketLength} · close:${workout.diagnostics.socketCloseCode ?? "-"}${workout.diagnostics.socketCloseReason ? `(${workout.diagnostics.socketCloseReason})` : ""}`}
         </output>
       )}
     </CameraStage>
