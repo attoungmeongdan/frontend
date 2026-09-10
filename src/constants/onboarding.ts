@@ -28,11 +28,11 @@ export interface OnboardingStep {
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "name",
-    stepName: "이름 확인",
-    question: "카카오 계정의 이름이 맞는지\n확인해 주세요",
+    stepName: "이름",
+    question: "어떤 이름으로 부를까요?",
     mascot: turtleGuide,
     message:
-      "안녕하세요! \n저는 꾸준한 거북이,꾸북이예요. \nFitple에서는 간단히 체력을 재고, 꾸준히 기록을 쌓을 수 있어요.",
+      "안녕하세요! \n저는 꾸준한 거북이,꾸북이예요. \nFittle에서는 간단히 체력을 재고, 꾸준히 기록을 쌓을 수 있어요.",
     tip: {
       icon: Dumbbell,
       title: "자유 운동",

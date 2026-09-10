@@ -65,6 +65,24 @@ declare namespace kakao.maps {
   }
 }
 
+// 우편번호 서비스는 지도 SDK와 별개 스크립트지만 같은 kakao 전역에 붙는다.
+// https://postcode.map.kakao.com/guide
+declare namespace kakao {
+  interface PostcodeData {
+    zonecode: string;
+    address: string;
+    roadAddress: string;
+    jibunAddress: string;
+    userSelectedType: "R" | "J";
+    buildingName?: string;
+  }
+
+  class Postcode {
+    constructor(options: { oncomplete: (data: PostcodeData) => void });
+    open(): void;
+  }
+}
+
 interface Window {
   kakao?: typeof kakao;
 }

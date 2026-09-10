@@ -7,8 +7,16 @@ import Button from "@/components/ui/Button";
 import MascotSpeech from "@/components/ui/MascotSpeech";
 import ProgressIndicator from "@/components/ui/ProgressIndicator";
 import TextField from "@/components/ui/TextField";
+import { isAxiosError } from "axios";
+import { oauthSignup } from "@/apis/auth";
+import type { CommonResponse } from "@/types/api";
 import { ONBOARDING_STEPS } from "@/constants/onboarding";
-import { useKakaoPostcode } from "@/hooks/useKakaoPostcode";
+import {
+  getSelectedAddress,
+  useKakaoPostcode,
+  type KakaoPostcodeData,
+} from "@/hooks/useKakaoPostcode";
+import { setAccessToken } from "@/apis/tokenStore";
 import turtleCheer from "@/assets/mascots/turtle-cheer.png";
 import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
@@ -32,6 +40,15 @@ function isPositiveNumber(value: string) {
   return /^\d+(\.\d+)?$/.test(value.trim()) && Number(value) > 0;
 }
 
+// 서버가 내려준 메시지를 그대로 보여주고, 없으면 일반 문구로 대체
+function getSignupErrorMessage(caught: unknown) {
+  if (isAxiosError<CommonResponse<unknown>>(caught) && caught.response?.data?.message) {
+    return caught.response.data.message;
+  }
+
+  return "저장에 실패했어요. 잠시 후 다시 시도해 주세요.";
+}
+
 function OnboardingPage() {
   const navigate = useNavigate();
   const openPostcode = useKakaoPostcode();
@@ -41,10 +58,13 @@ function OnboardingPage() {
   const [addressStatus, setAddressStatus] = useState<AddressStatus>("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [name] = useState("김핏틀");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [address, setAddress] = useState("");
+  const [addressDetail, setAddressDetail] = useState<KakaoPostcodeData | null>(null);
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
@@ -54,7 +74,8 @@ function OnboardingPage() {
   const handleSearchAddress = async () => {
     try {
       await openPostcode((selected) => {
-        setAddress(selected);
+        setAddress(getSelectedAddress(selected));
+        setAddressDetail(selected);
         setAddressStatus("done");
       });
     } catch {
@@ -75,10 +96,31 @@ function OnboardingPage() {
     handlePrev();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    // TODO: 온보딩 저장 API 연동. 지금은 저장 없이 홈으로 이동한다.
-    navigate("/", { replace: true });
+    setSubmitError(null);
+
+    try {
+      const { accessToken } = await oauthSignup({
+        nickname: name.trim(),
+        age: Number(age),
+        gender: gender === "female" ? "FEMALE" : "MALE",
+        height: Number(height),
+        weight: Number(weight),
+        address: addressDetail
+          ? {
+              roadNameAddress: addressDetail.roadAddress,
+              lotNumberAddress: addressDetail.jibunAddress,
+            }
+          : undefined,
+      });
+
+      setAccessToken(accessToken);
+      navigate("/", { replace: true });
+    } catch (caught) {
+      setIsSubmitting(false);
+      setSubmitError(getSignupErrorMessage(caught));
+    }
   };
 
   const handleNext = () => {
@@ -96,9 +138,10 @@ function OnboardingPage() {
     }
 
     setError(null);
+    setSubmitError(null);
 
     if (isLastStep) {
-      handleSubmit();
+      void handleSubmit();
       return;
     }
 
@@ -107,6 +150,7 @@ function OnboardingPage() {
 
   const isNextDisabled =
     isSubmitting ||
+    (step.id === "name" && name.trim() === "") ||
     (step.id === "age" && age.trim() === "") ||
     (step.id === "gender" && gender === null) ||
     (step.id === "address" && address === "") ||
@@ -125,6 +169,11 @@ function OnboardingPage() {
   } else if (error) {
     mascot = turtleCheer;
     message = "괜찮아요, 천천히 숫자만\n다시 입력해 주세요.";
+  }
+
+  if (submitError) {
+    mascot = turtleCheer;
+    message = "저장이 잘 안 됐어요.\n잠시 후 다시 눌러주세요.";
   }
 
   if (isSubmitting) {
@@ -151,8 +200,10 @@ function OnboardingPage() {
             <TextField
               label="이름"
               value={name}
-              status="readonly"
-              helper="소셜 프로필 정보라 수정할 수 없어요."
+              onChange={(event) => setName(event.target.value)}
+              placeholder="김핏틀"
+              maxLength={20}
+              helper="서비스에서 이 이름으로 불러드려요."
             />
           )}
 
@@ -237,11 +288,11 @@ function OnboardingPage() {
               unit="kg"
               inputMode="decimal"
               placeholder="58"
-              status={error ? "error" : "default"}
+              status={error || submitError ? "error" : "default"}
               helper={
                 isSubmitting
                   ? "입력하신 정보를 저장하고 있어요."
-                  : (error ?? "입력을 마치면 홈으로 이동해요.")
+                  : (error ?? submitError ?? "입력을 마치면 홈으로 이동해요.")
               }
             />
           )}

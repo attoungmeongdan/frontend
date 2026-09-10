@@ -96,10 +96,6 @@ function TrendChart({ series }: TrendChartProps) {
           측정이 2회 이상 쌓이면 그래프를 보여드려요.
         </p>
       )}
-
-      <p className="text-text-secondary text-[11px]">
-        단위: 회 · 시간순 최근 최대 5개 · 종목별 축 분리
-      </p>
     </section>
   );
 }

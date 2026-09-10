@@ -8,6 +8,7 @@ import MapPage from "@/pages/MapPage";
 import MeasurePage from "@/pages/MeasurePage";
 import MyPage from "@/pages/MyPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import OAuthCallbackPage from "@/pages/OAuthCallbackPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import SplashPage from "@/pages/SplashPage";
 import type { LayoutHandle } from "@/types/layout";
@@ -24,6 +25,12 @@ export const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginPage />,
+        handle: { header: false, fullBleed: true } satisfies LayoutHandle,
+      },
+      {
+        // 서버에 등록된 redirect_uri 와 정확히 같아야 한다
+        path: "/auth/oauth2/:provider/callback",
+        element: <OAuthCallbackPage />,
         handle: { header: false, fullBleed: true } satisfies LayoutHandle,
       },
       {
