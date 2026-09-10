@@ -46,7 +46,11 @@ export const router = createBrowserRouter([
       {
         path: "/exercise/:type",
         element: <ExercisePage />,
-        handle: { header: { showBack: true, backTo: "/" } } satisfies LayoutHandle,
+        handle: {
+          header: false,
+          fullBleed: true,
+          fullViewport: true,
+        } satisfies LayoutHandle,
       },
       {
         path: "/measure",

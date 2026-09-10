@@ -19,6 +19,8 @@
   --color-border-default: #dce7e5;
   --color-border-footer: #dde5e5;
   --color-destructive: #e76751;
+  --color-camera-backdrop: #2e3a3a;
+  --color-camera-overlay: #25313199;
   --color-camera-scrim: #253131b8;
 
   /* 색 - 결과 전용 (동연령대 평균 대비). 결과 UI 밖에서는 쓰지 않고 항상 텍스트로 의미 병기 */
@@ -74,9 +76,18 @@
   --text-button: 16px;
   --text-button--line-height: 20px;
   --text-button--font-weight: 600;
-  --text-camera-number: 64px;
-  --text-camera-number--line-height: 72px;
+  --text-camera-number: 80px;
+  --text-camera-number--line-height: 88px;
   --text-camera-number--font-weight: 700;
+  --text-camera-number-landscape: 64px;
+  --text-camera-number-landscape--line-height: 72px;
+  --text-camera-number-landscape--font-weight: 700;
+  --text-camera-count: 88px;
+  --text-camera-count--line-height: 96px;
+  --text-camera-count--font-weight: 700;
+  --text-camera-count-landscape: 72px;
+  --text-camera-count-landscape--line-height: 80px;
+  --text-camera-count-landscape--font-weight: 700;
 
   /* 타이포 - 화면 작업에서 추가된 것 */
   --text-guide: 15px;

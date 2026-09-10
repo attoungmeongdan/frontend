@@ -6,11 +6,13 @@ import type { LayoutHandle } from "@/types/layout";
 function AppLayout() {
   const matches = useMatches();
   const handle = (matches[matches.length - 1]?.handle ?? {}) as LayoutHandle;
-  const { header = {}, bottomNav = false, fullBleed = false } = handle;
+  const { header = {}, bottomNav = false, fullBleed = false, fullViewport = false } = handle;
 
   return (
     <div className="bg-surface-subtle flex h-dvh justify-center">
-      <div className="bg-surface-default max-w-shell flex h-full w-full flex-col overflow-hidden">
+      <div
+        className={`bg-surface-default flex h-full w-full flex-col overflow-hidden ${fullViewport ? "" : "max-w-shell"}`}
+      >
         {header !== false && (
           <Header title={header.title} showBack={header.showBack} backTo={header.backTo} />
         )}

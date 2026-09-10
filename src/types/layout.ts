@@ -15,4 +15,6 @@ export interface LayoutHandle {
   bottomNav?: boolean;
   /** 카메라 화면처럼 본문 여백 없이 꽉 채우는 경우 */
   fullBleed?: boolean;
+  /** 카메라 화면처럼 데스크톱·가로 화면에서도 모바일 셸 너비를 제한하지 않는 경우 */
+  fullViewport?: boolean;
 }
