@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
@@ -7,7 +7,7 @@ type HeaderProps = HeaderConfig & {
   onBack?: () => void;
 };
 
-function Header({ title, showBack = false, backTo, onBack }: HeaderProps) {
+function Header({ title, showBack = false, showClose = false, backTo, onBack }: HeaderProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -43,7 +43,18 @@ function Header({ title, showBack = false, backTo, onBack }: HeaderProps) {
         <img src={wordmark} alt="Fittle" className="h-7 w-21 object-contain" />
       )}
 
-      <div className="size-11" />
+      <div className="flex size-11 items-center justify-center">
+        {showClose && (
+          <button
+            type="button"
+            aria-label="닫고 홈으로 돌아가기"
+            onClick={() => navigate("/")}
+            className="text-text-primary flex size-11 items-center justify-center"
+          >
+            <X size={24} aria-hidden />
+          </button>
+        )}
+      </div>
     </header>
   );
 }

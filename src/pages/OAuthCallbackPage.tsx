@@ -2,12 +2,14 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { handleOAuthCallback, refreshAccessToken, type SocialProvider } from "@/apis/auth";
 import { setAccessToken } from "@/apis/tokenStore";
-import logo from "@/assets/logo/fittle-logo-ggubuk.png";
+import BootSplash from "@/components/common/BootSplash";
+import { useAuth } from "@/hooks/useAuth";
 
 function OAuthCallbackPage() {
   const navigate = useNavigate();
   const { provider } = useParams<{ provider: SocialProvider }>();
   const [searchParams] = useSearchParams();
+  const { markAuthenticated, markSignupRequired } = useAuth();
   const hasRun = useRef(false);
 
   useEffect(() => {
@@ -29,12 +31,14 @@ function OAuthCallbackPage() {
         const resultType = await handleOAuthCallback(provider, code, state);
 
         if (resultType === "SIGNUP_REQUIRED") {
+          markSignupRequired();
           navigate("/onboarding", { replace: true });
           return;
         }
 
         const { accessToken } = await refreshAccessToken();
         setAccessToken(accessToken);
+        markAuthenticated();
         navigate("/", { replace: true });
       } catch {
         navigate("/login?error=oauth", { replace: true });
@@ -42,18 +46,9 @@ function OAuthCallbackPage() {
     };
 
     void run();
-  }, [navigate, provider, searchParams]);
+  }, [markAuthenticated, markSignupRequired, navigate, provider, searchParams]);
 
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-8 pb-20">
-      <img src={logo} alt="Fittle" className="size-50 object-contain" />
-      <div
-        role="progressbar"
-        aria-label="로그인 처리 중"
-        className="border-border-default border-t-brand-teal size-11 animate-spin rounded-full border-4"
-      />
-    </div>
-  );
+  return <BootSplash label="로그인 처리 중" />;
 }
 
 export default OAuthCallbackPage;

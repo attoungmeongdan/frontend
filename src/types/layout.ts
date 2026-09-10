@@ -4,6 +4,8 @@ export interface HeaderConfig {
   title?: string;
   /** 좌측 뒤로가기 버튼 노출 여부 */
   showBack?: boolean;
+  /** 우측 닫기 버튼 노출 여부. 결과 화면을 닫고 홈으로 이동 */
+  showClose?: boolean;
   /** 뒤로가기 목적지. 없으면 history back */
   backTo?: string;
 }

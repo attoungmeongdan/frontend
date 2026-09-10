@@ -13,10 +13,12 @@ import type { CommonResponse } from "@/types/api";
 import { ONBOARDING_STEPS } from "@/constants/onboarding";
 import {
   getSelectedAddress,
+  toAddressPayload,
   useKakaoPostcode,
   type KakaoPostcodeData,
 } from "@/hooks/useKakaoPostcode";
 import { setAccessToken } from "@/apis/tokenStore";
+import { useAuth } from "@/hooks/useAuth";
 import turtleCheer from "@/assets/mascots/turtle-cheer.png";
 import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
@@ -52,6 +54,7 @@ function getSignupErrorMessage(caught: unknown) {
 function OnboardingPage() {
   const navigate = useNavigate();
   const openPostcode = useKakaoPostcode();
+  const { markAuthenticated } = useAuth();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -107,15 +110,12 @@ function OnboardingPage() {
         gender: gender === "female" ? "FEMALE" : "MALE",
         height: Number(height),
         weight: Number(weight),
-        address: addressDetail
-          ? {
-              roadNameAddress: addressDetail.roadAddress,
-              lotNumberAddress: addressDetail.jibunAddress,
-            }
-          : undefined,
+        // 도로명·지번 중 하나라도 비면 서버가 거절하므로 아예 보내지 않는다
+        address: addressDetail ? (toAddressPayload(addressDetail) ?? undefined) : undefined,
       });
 
       setAccessToken(accessToken);
+      markAuthenticated();
       navigate("/", { replace: true });
     } catch (caught) {
       setIsSubmitting(false);

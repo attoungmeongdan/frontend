@@ -2,12 +2,8 @@ import { useCallback } from "react";
 
 const POSTCODE_SCRIPT_SRC = "https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
 
-// 전역 타입은 src/types/kakao.d.ts 에 지도 SDK와 함께 선언돼 있다
 export type KakaoPostcodeData = kakao.PostcodeData;
 
-// 진행 중인 로딩을 들고 있어서 동시 호출이 스크립트를 중복 주입하지 않게 한다.
-// DOM에서 기존 script 를 찾아 리스너를 다시 붙이면, 이미 error 가 끝난 요소에는
-// 이벤트가 다시 오지 않아 Promise 가 영영 pending 으로 남는다.
 let pendingLoad: Promise<void> | null = null;
 
 function loadPostcodeScript() {
@@ -26,7 +22,6 @@ function loadPostcodeScript() {
 
     script.addEventListener("load", () => resolve());
     script.addEventListener("error", () => {
-      // 실패한 요소와 기억을 함께 버려야 다음 호출이 새로 시도할 수 있다
       script.remove();
       pendingLoad = null;
       reject(new Error("우편번호 스크립트를 불러오지 못했어요."));
@@ -58,4 +53,20 @@ export function useKakaoPostcode() {
 /** 사용자가 고른 주소를 그대로 보여줄 때 사용 */
 export function getSelectedAddress(data: KakaoPostcodeData) {
   return data.userSelectedType === "R" ? data.roadAddress : data.jibunAddress;
+}
+
+/**
+ * 서버에 보낼 도로명·지번 한 쌍.
+ * 도로명만 있는 주소는 jibunAddress 가 빈 문자열로 오므로,
+ * 우편번호 서비스가 같이 주는 auto* 값으로 메운다. 그래도 비면 null 을 돌려준다.
+ */
+export function toAddressPayload(data: KakaoPostcodeData) {
+  const roadNameAddress = data.roadAddress || data.autoRoadAddress;
+  const lotNumberAddress = data.jibunAddress || data.autoJibunAddress;
+
+  if (!roadNameAddress || !lotNumberAddress) {
+    return null;
+  }
+
+  return { roadNameAddress, lotNumberAddress };
 }
