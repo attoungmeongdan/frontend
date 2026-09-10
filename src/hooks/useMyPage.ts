@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { logout } from "@/apis/auth";
 import { getMyProfile, withdraw } from "@/apis/user";
 import { ACCOUNT_ACTION_ERROR } from "@/constants/mypage";
+import { useAuth } from "@/hooks/useAuth";
 
 export const MY_PROFILE_QUERY_KEY = ["user", "me"] as const;
 
@@ -19,13 +19,14 @@ interface AccountActionOptions {
 }
 
 /**
- * 로그아웃·탈퇴. 성공하면 로그인 화면으로 보낸다.
- * 세션이 끊긴 상태라 뒤로 가기로 돌아오지 못하게 replace 로 이동한다.
+ * 로그아웃·탈퇴.
+ * 화면 이동은 직접 하지 않는다. 인증 상태만 바꾸면 라우트 가드가 로그인 화면으로 보낸다.
+ * 직접 이동하면 상태가 authenticated 로 남아 있어 가드가 다시 홈으로 되돌린다.
  */
 export function useAccountActions({ onError }: AccountActionOptions) {
-  const navigate = useNavigate();
+  const { markSignedOut } = useAuth();
 
-  const goToLogin = () => navigate("/login", { replace: true });
+  const goToLogin = markSignedOut;
 
   const logoutMutation = useMutation({
     mutationFn: logout,
