@@ -33,6 +33,7 @@
   --color-nav-active-icon: var(--color-brand-teal);
   --color-nav-active-label: var(--color-brand-teal-strong);
   --color-focus-ring: var(--color-brand-teal-strong);
+  --color-feedback-error: var(--color-brand-teal-strong);
   --color-field-border-strong: var(--color-text-secondary);
 
   /* 타이포 - 기본 스케일 */
