@@ -28,5 +28,5 @@ export const ERROR_TITLE = "기록을 불러오지 못했어요";
 export const ERROR_DESCRIPTION = "잠시 후 다시 시도해 주세요. 기록 자체는 사라지지 않아요.";
 export const ERROR_RETRY_LABEL = "다시 불러오기";
 
-export const LEGEND_EXERCISED_LABEL = "운동한 날";
+export const LEGEND_EXERCISED_LABEL = "운동 1~4개";
 export const LEGEND_TODAY_LABEL = "오늘";
