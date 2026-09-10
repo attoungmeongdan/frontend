@@ -13,8 +13,7 @@ import NotFoundPage from "@/pages/NotFoundPage";
 import OAuthCallbackPage from "@/pages/OAuthCallbackPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import SplashPage from "@/pages/SplashPage";
-import ProtectedRoute from "@/routes/ProtectedRoute";
-import PublicOnlyRoute from "@/routes/PublicOnlyRoute";
+import AuthGate from "@/routes/AuthGate";
 import type { LayoutHandle } from "@/types/layout";
 
 export const router = createBrowserRouter([
@@ -35,15 +34,22 @@ export const router = createBrowserRouter([
         handle: { header: false, fullBleed: true } satisfies LayoutHandle,
       },
 
-      // 로그인 전에만 의미 있는 화면
+      // 로그인 전 화면
       {
-        element: <PublicOnlyRoute />,
+        element: <AuthGate allow="unauthenticated" />,
         children: [
           {
             path: "/login",
             element: <LoginPage />,
             handle: { header: false, fullBleed: true } satisfies LayoutHandle,
           },
+        ],
+      },
+
+      // 소셜 인증은 됐지만 가입을 안 끝낸 상태에서만 들어올 수 있다
+      {
+        element: <AuthGate allow="signup_required" />,
+        children: [
           {
             path: "/onboarding",
             element: <OnboardingPage />,
@@ -54,7 +60,7 @@ export const router = createBrowserRouter([
 
       // 로그인해야 볼 수 있는 화면
       {
-        element: <ProtectedRoute />,
+        element: <AuthGate allow="authenticated" />,
         children: [
           {
             path: "/",

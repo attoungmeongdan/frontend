@@ -61,8 +61,8 @@ export function getSelectedAddress(data: KakaoPostcodeData) {
  * 우편번호 서비스가 같이 주는 auto* 값으로 메운다. 그래도 비면 null 을 돌려준다.
  */
 export function toAddressPayload(data: KakaoPostcodeData) {
-  const roadNameAddress = data.roadAddress || data.autoRoadAddress || data.address;
-  const lotNumberAddress = data.jibunAddress || data.autoJibunAddress || data.address;
+  const roadNameAddress = data.roadAddress || data.autoRoadAddress;
+  const lotNumberAddress = data.jibunAddress || data.autoJibunAddress;
 
   if (!roadNameAddress || !lotNumberAddress) {
     return null;

@@ -9,7 +9,7 @@ function OAuthCallbackPage() {
   const navigate = useNavigate();
   const { provider } = useParams<{ provider: SocialProvider }>();
   const [searchParams] = useSearchParams();
-  const { markAuthenticated } = useAuth();
+  const { markAuthenticated, markSignupRequired } = useAuth();
   const hasRun = useRef(false);
 
   useEffect(() => {
@@ -31,6 +31,7 @@ function OAuthCallbackPage() {
         const resultType = await handleOAuthCallback(provider, code, state);
 
         if (resultType === "SIGNUP_REQUIRED") {
+          markSignupRequired();
           navigate("/onboarding", { replace: true });
           return;
         }
@@ -45,7 +46,7 @@ function OAuthCallbackPage() {
     };
 
     void run();
-  }, [markAuthenticated, navigate, provider, searchParams]);
+  }, [markAuthenticated, markSignupRequired, navigate, provider, searchParams]);
 
   return <BootSplash label="로그인 처리 중" />;
 }
