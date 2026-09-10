@@ -2,25 +2,8 @@ import { useCallback } from "react";
 
 const POSTCODE_SCRIPT_SRC = "https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
 
-export interface KakaoPostcodeData {
-  zonecode: string;
-  address: string;
-  roadAddress: string;
-  jibunAddress: string;
-  userSelectedType: "R" | "J";
-  buildingName?: string;
-}
-
-declare global {
-  interface Window {
-    // 카카오 지도 SDK도 window.kakao 를 쓰므로 Postcode 만 optional 로 선언해 병합되게 둔다
-    kakao?: {
-      Postcode?: new (options: { oncomplete: (data: KakaoPostcodeData) => void }) => {
-        open: () => void;
-      };
-    };
-  }
-}
+// 전역 타입은 src/types/kakao.d.ts 에 지도 SDK와 함께 선언돼 있다
+export type KakaoPostcodeData = kakao.PostcodeData;
 
 // 진행 중인 로딩을 들고 있어서 동시 호출이 스크립트를 중복 주입하지 않게 한다.
 // DOM에서 기존 script 를 찾아 리스너를 다시 붙이면, 이미 error 가 끝난 요소에는

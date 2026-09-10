@@ -33,10 +33,10 @@
   --color-nav-active-icon: var(--color-brand-teal);
   --color-nav-active-label: var(--color-brand-teal-strong);
   --color-focus-ring: var(--color-brand-teal-strong);
-  --color-field-border-strong: var(--color-text-secondary);
 
   /* 입력 오류 피드백. 디자인상 빨강이 아니라 청록이다 (빨강은 결과 UI 전용) */
   --color-feedback-error: var(--color-brand-teal-strong);
+  --color-field-border-strong: var(--color-text-secondary);
 
   /* 색 - 온보딩 Tip 카드 (투명도 섞인 값이라 별도 토큰)
      이름에 note 를 쓰면 --text-note-title 타이포 토큰과 text-* 유틸이 충돌하므로 tip 으로 둔다 */

@@ -23,5 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-*.md
+# 루트에 두는 로컬 기획 문서만 제외 (README·.github 템플릿은 추적)
+/*.md
+!/README.md
+
 .env
