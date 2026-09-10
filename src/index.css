@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* FitPle-v2.1.pen 디자인 토큰
+/* Fittle-v2.1.pen 디자인 토큰
    - 색/반경/그림자/타이포는 디자인 파일 값을 그대로 옮김
    - spacing 4/8/12/16/20/24/32/40/48 은 Tailwind 기본 4px 스케일과 동일해서 별도 정의 안 함 */
 @theme {
