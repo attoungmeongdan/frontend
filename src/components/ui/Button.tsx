@@ -1,15 +1,19 @@
 import type { ComponentProps } from "react";
 import type { LucideIcon } from "lucide-react";
 
+export type ButtonVariant = "primary" | "secondary" | "destructive";
+
 interface ButtonProps extends ComponentProps<"button"> {
-  variant?: "primary" | "secondary";
+  variant?: ButtonVariant;
   leadingIcon?: LucideIcon;
 }
 
 // UI/Button (SK7Wl) — 높이 52, radius 16, 라벨 16/600, 아이콘과 gap 8
+// destructive 는 UI/Button-Destructive (mZNBq) — 탈퇴처럼 되돌릴 수 없는 동작에만 쓴다
 const VARIANT_CLASS = {
   primary: "bg-action-primary-bg text-action-primary-fg",
   secondary: "border-brand-teal-strong text-action-secondary-fg border bg-white",
+  destructive: "border-destructive text-destructive border bg-white",
 } as const;
 
 function Button({

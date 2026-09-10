@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import Button from "@/components/ui/Button";
+import Button, { type ButtonVariant } from "@/components/ui/Button";
 
 interface MascotModalAction {
   label: string;
@@ -13,6 +13,9 @@ interface MascotModalProps {
   body: string;
   primaryAction: MascotModalAction;
   secondaryAction?: MascotModalAction;
+  /** 되돌릴 수 없는 동작을 확인받을 때 destructive 로 바꾼다 */
+  primaryVariant?: ButtonVariant;
+  secondaryVariant?: ButtonVariant;
   onClose: () => void;
 }
 
@@ -22,6 +25,8 @@ function MascotModal({
   body,
   primaryAction,
   secondaryAction,
+  primaryVariant = "primary",
+  secondaryVariant = "secondary",
   onClose,
 }: MascotModalProps) {
   useEffect(() => {
@@ -64,9 +69,11 @@ function MascotModal({
         <p className="text-body text-text-primary w-full text-center whitespace-pre-line">{body}</p>
 
         <div className="flex w-full flex-col gap-2">
-          <Button onClick={primaryAction.onClick}>{primaryAction.label}</Button>
+          <Button variant={primaryVariant} onClick={primaryAction.onClick}>
+            {primaryAction.label}
+          </Button>
           {secondaryAction && (
-            <Button variant="secondary" onClick={secondaryAction.onClick}>
+            <Button variant={secondaryVariant} onClick={secondaryAction.onClick}>
               {secondaryAction.label}
             </Button>
           )}

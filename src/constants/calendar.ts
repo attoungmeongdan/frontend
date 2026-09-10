@@ -1,4 +1,4 @@
-// 08_Calendar 문구 — FitPle-v2.1.pen 08_Calendar 프레임의 텍스트를 그대로 사용
+// 08_Calendar 문구 — Fittle-v2.1.pen 08_Calendar 프레임의 텍스트를 그대로 사용
 
 export const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
