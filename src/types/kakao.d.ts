@@ -1,6 +1,3 @@
-// 카카오맵 JS SDK 중 이 프로젝트에서 쓰는 API만 선언한다.
-// 공식 타입 패키지가 없어 필요한 만큼만 정의한다.
-
 declare namespace kakao.maps {
   class LatLng {
     constructor(lat: number, lng: number);
@@ -65,7 +62,6 @@ declare namespace kakao.maps {
   }
 }
 
-// 우편번호 서비스는 지도 SDK와 별개 스크립트지만 같은 kakao 전역에 붙는다.
 // https://postcode.map.kakao.com/guide
 declare namespace kakao {
   interface PostcodeData {
@@ -73,6 +69,10 @@ declare namespace kakao {
     address: string;
     roadAddress: string;
     jibunAddress: string;
+    /** 도로명 주소가 없는 곳에서 대신 제공되는 도로명 주소 */
+    autoRoadAddress?: string;
+    /** 지번 주소가 없는 곳에서 대신 제공되는 지번 주소 */
+    autoJibunAddress?: string;
     userSelectedType: "R" | "J";
     buildingName?: string;
   }

@@ -4,10 +4,11 @@ import turtleGuide from "@/assets/mascots/turtle-guide.png";
 interface MeasureBubbleProps {
   message: string;
   onMeasure: () => void;
+  disabled?: boolean;
 }
 
 // 운동 능력 측정
-function MeasureBubble({ message, onMeasure }: MeasureBubbleProps) {
+function MeasureBubble({ message, onMeasure, disabled = false }: MeasureBubbleProps) {
   return (
     <div className="flex items-center">
       <img src={turtleGuide} alt="" className="size-21 shrink-0 object-contain" />
@@ -24,7 +25,9 @@ function MeasureBubble({ message, onMeasure }: MeasureBubbleProps) {
 
       <div className="bg-surface-subtle rounded-bubble flex min-w-0 flex-1 flex-col gap-2.5 px-4 py-3.5">
         <p className="text-guide text-text-primary font-semibold whitespace-pre-line">{message}</p>
-        <Button onClick={onMeasure}>내 운동 능력 측정해보기</Button>
+        <Button onClick={onMeasure} disabled={disabled}>
+          내 운동 능력 측정해보기
+        </Button>
       </div>
     </div>
   );

@@ -2,16 +2,15 @@ const SEOUL_TIME_ZONE = "Asia/Seoul";
 
 export interface SeoulDate {
   year: number;
-  /** 1-12 */
   month: number;
-  /** 1-31 */
   date: number;
 }
 
-/**
- * 한국 표준시(KST) 기준 오늘 날짜.
- * 기기 타임존을 따르는 Date#getDate 대신 서울 시간대로 고정한다.
- */
+export interface SeoulDay extends SeoulDate {
+  iso: string;
+  weekday: number;
+}
+
 export function getSeoulToday(): SeoulDate {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: SEOUL_TIME_ZONE,
@@ -28,4 +27,22 @@ export function getSeoulToday(): SeoulDate {
     month: findPart("month"),
     date: findPart("day"),
   };
+}
+
+export function getRecentSeoulDays(count: number): SeoulDay[] {
+  const today = getSeoulToday();
+  const base = Date.UTC(today.year, today.month - 1, today.date);
+
+  return Array.from({ length: count }, (_, index) => {
+    const day = new Date(base);
+    day.setUTCDate(day.getUTCDate() - (count - 1 - index));
+
+    return {
+      year: day.getUTCFullYear(),
+      month: day.getUTCMonth() + 1,
+      date: day.getUTCDate(),
+      iso: day.toISOString().slice(0, 10),
+      weekday: day.getUTCDay(),
+    };
+  });
 }
