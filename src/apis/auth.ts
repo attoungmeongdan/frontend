@@ -1,4 +1,5 @@
 import { axiosInstance } from "@/apis/axiosInstance";
+import { clearAccessToken } from "@/apis/tokenStore";
 import type { CommonResponse } from "@/types/api";
 
 export type SocialProvider = "kakao" | "google";
@@ -60,5 +61,9 @@ export async function refreshAccessToken() {
 
 // 로그아웃
 export async function logout() {
-  await axiosInstance.post<CommonResponse<void>>("/api/v1/auth/logout");
+  try {
+    await axiosInstance.post<CommonResponse<void>>("/api/v1/auth/logout");
+  } finally {
+    clearAccessToken();
+  }
 }

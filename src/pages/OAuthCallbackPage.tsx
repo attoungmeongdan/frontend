@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { handleOAuthCallback, refreshAccessToken, type SocialProvider } from "@/apis/auth";
-import { saveAccessToken } from "@/utils/token";
+import { setAccessToken } from "@/apis/tokenStore";
 import logo from "@/assets/logo/fittle-logo-ggubuk.png";
 
 function OAuthCallbackPage() {
@@ -34,7 +34,7 @@ function OAuthCallbackPage() {
         }
 
         const { accessToken } = await refreshAccessToken();
-        saveAccessToken(accessToken);
+        setAccessToken(accessToken);
         navigate("/", { replace: true });
       } catch {
         navigate("/login?error=oauth", { replace: true });

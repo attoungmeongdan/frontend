@@ -16,7 +16,7 @@ import {
   useKakaoPostcode,
   type KakaoPostcodeData,
 } from "@/hooks/useKakaoPostcode";
-import { saveAccessToken } from "@/utils/token";
+import { setAccessToken } from "@/apis/tokenStore";
 import turtleCheer from "@/assets/mascots/turtle-cheer.png";
 import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
@@ -115,7 +115,7 @@ function OnboardingPage() {
           : undefined,
       });
 
-      saveAccessToken(accessToken);
+      setAccessToken(accessToken);
       navigate("/", { replace: true });
     } catch (caught) {
       setIsSubmitting(false);
