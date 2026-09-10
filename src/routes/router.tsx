@@ -55,7 +55,11 @@ export const router = createBrowserRouter([
       {
         path: "/measure",
         element: <MeasurePage />,
-        handle: { header: { showBack: true, backTo: "/" } } satisfies LayoutHandle,
+        handle: {
+          header: false,
+          fullBleed: true,
+          fullViewport: true,
+        } satisfies LayoutHandle,
       },
       {
         path: "/calendar",
