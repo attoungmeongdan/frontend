@@ -15,7 +15,7 @@ function Toast({ message, icon: Icon = Check, iconClassName = "text-white", acti
   return (
     <div
       role="status"
-      className="bg-text-primary rounded-input flex items-center gap-2 px-4 py-3.5"
+      className="bg-text-primary/70 rounded-input flex items-center gap-2 px-4 py-3.5 backdrop-blur-sm"
     >
       <Icon size={20} aria-hidden className={`shrink-0 ${iconClassName}`} />
       <p className="text-body flex-1 font-semibold whitespace-pre-line text-white">{message}</p>
