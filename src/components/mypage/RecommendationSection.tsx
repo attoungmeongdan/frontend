@@ -11,13 +11,17 @@ interface RecommendationSectionProps {
   onRetry: () => void;
 }
 
+/** 디자인 10_Mypage 기준 노출 개수. 스켈레톤 행 수도 이 값을 따른다 */
+const MAX_RECOMMENDATIONS = 3;
+
 const ICON_MAP: Record<RecommendationIcon, LucideIcon> = {
   walk: Footprints,
   swim: Waves,
   stretch: PersonStanding,
 };
 
-// BMI·연령대·성별로 매칭된 상위 3개를 그대로 노출한다. 매칭이 없으면 비워 둔다
+// BMI·연령대·성별로 매칭된 상위 3개를 순서 그대로 노출한다. 매칭이 없으면 비워 둔다.
+// 순위는 서버 응답 순서를 따르되, 4개 이상 내려와도 rank 가 4 이상으로 찍히지 않도록 3개에서 자른다
 function RecommendationSection({ status, recommendations, onRetry }: RecommendationSectionProps) {
   return (
     <section className="flex w-full flex-col gap-3">
@@ -33,7 +37,7 @@ function RecommendationSection({ status, recommendations, onRetry }: Recommendat
           <RecommendationEmpty />
         ) : (
           <ol className="flex flex-col gap-3">
-            {recommendations.map((recommendation, index) => (
+            {recommendations.slice(0, MAX_RECOMMENDATIONS).map((recommendation, index) => (
               <RecommendationRow
                 key={recommendation.id}
                 rank={index + 1}
@@ -75,7 +79,7 @@ function RecommendationSkeleton() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3" aria-hidden>
-        {[0, 1, 2].map((index) => (
+        {Array.from({ length: MAX_RECOMMENDATIONS }, (_, index) => (
           <div key={index} className="bg-surface-subtle h-18 w-full rounded-2xl" />
         ))}
       </div>
