@@ -69,8 +69,11 @@ function CameraStage({
         <ArrowLeft size={24} aria-hidden />
       </button>
 
-      <div className="rounded-pill text-note-title bg-camera-overlay absolute top-[max(1rem,env(safe-area-inset-top))] left-1/2 z-10 -translate-x-1/2 px-3.5 py-1.5 text-center whitespace-nowrap landscape:top-[max(0.875rem,env(safe-area-inset-top))]">
-        {stageLabel ?? `자유 운동 · ${exerciseName}`}
+      {/* 좁은 화면에서는 뒤로가기 버튼과 겹치지 않도록 오른쪽 여백만 줄인다 */}
+      <div className="absolute inset-x-14 top-[max(1rem,env(safe-area-inset-top))] z-10 flex justify-center max-[22rem]:right-2 landscape:top-[max(0.875rem,env(safe-area-inset-top))]">
+        <div className="rounded-pill text-note-title bg-camera-overlay px-3.5 py-1.5 text-center whitespace-nowrap">
+          {stageLabel ?? `자유 운동 · ${exerciseName}`}
+        </div>
       </div>
 
       <div className="absolute top-16 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 text-center landscape:top-12 landscape:gap-0.5">
@@ -89,18 +92,20 @@ function CameraStage({
 
       {overlay}
 
+      {/* 경고는 화면 가운데 위 레이어에 띄운다. 반투명 아이콘 바로 아래에 문구를 붙이고, 다른 요소 배치와 조작에는 영향을 주지 않는다 */}
       {warning && (
         <div
           role="alert"
-          className="absolute inset-x-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-3 text-center landscape:flex-row landscape:justify-center landscape:gap-4"
+          className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 px-4"
         >
-          <TriangleAlert
-            size={192}
-            strokeWidth={2.25}
-            className="text-accent-yellow motion-safe:animate-pulse landscape:size-42"
-            aria-hidden
-          />
-          <p className="bg-camera-scrim text-body-small rounded-sm px-4 py-2 font-semibold">
+          <div className="opacity-50" aria-hidden>
+            <TriangleAlert
+              size={192}
+              strokeWidth={2.25}
+              className="text-accent-yellow motion-safe:animate-pulse landscape:size-[min(10.5rem,calc(100dvh-12.5rem))]"
+            />
+          </div>
+          <p className="bg-camera-scrim text-body-small rounded-sm px-4 py-2 text-center font-semibold">
             {WARNING_MESSAGE[warning]}
           </p>
         </div>
