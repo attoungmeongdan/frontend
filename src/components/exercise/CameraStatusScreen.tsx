@@ -68,11 +68,9 @@ function CameraStatusScreen({ state, onPrimary, onHome }: CameraStatusScreenProp
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 px-5 pt-4 pb-[max(2.25rem,env(safe-area-inset-bottom))] landscape:mx-auto landscape:w-full landscape:max-w-100 landscape:pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {!isLoading && (
-          <Button type="button" onClick={onPrimary}>
-            {primaryLabel}
-          </Button>
-        )}
+        <Button type="button" onClick={onPrimary}>
+          {primaryLabel}
+        </Button>
         <Button type="button" variant="secondary" onClick={onHome}>
           {state === "permission-request" ? "나중에 할게요 (홈으로)" : "홈으로 돌아가기"}
         </Button>
