@@ -1,4 +1,4 @@
-// 10_Mypage 문구 — FitPle-v2.1.pen 10_Mypage 프레임 기준
+// 10_Mypage 문구 — Fittle-v2.1.pen 10_Mypage 프레임 기준
 
 export const ACCOUNT_ACTIONS = {
   logout: "로그아웃",

@@ -1,4 +1,4 @@
-// 09_Map 문구·수치 — FitPle-v2.1.pen 09_Map 프레임 기준
+// 09_Map 문구·수치 — Fittle-v2.1.pen 09_Map 프레임 기준
 
 /** 집 주변 표시 반경(m). 이 범위 밖 시설은 표시하지 않는다 */
 export const SEARCH_RADIUS_METERS = 5000;
