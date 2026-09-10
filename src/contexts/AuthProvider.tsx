@@ -4,6 +4,12 @@ import { refreshAccessToken } from "@/apis/auth";
 import { getAccessToken, setAccessToken } from "@/apis/tokenStore";
 import { AuthContext, type AuthStatus } from "@/contexts/authContext";
 
+const OAUTH_CALLBACK_PATTERN = /^\/auth\/oauth2\/[^/]+\/callback$/;
+
+function isOAuthCallbackPath(pathname: string) {
+  return OAUTH_CALLBACK_PATTERN.test(pathname);
+}
+
 /**
  * 액세스 토큰은 메모리에만 있어서 새로고침하면 사라진다.
  * 앱이 뜰 때 HttpOnly refresh_token 쿠키로 세션 복구를 한 번 시도하고,
@@ -26,6 +32,12 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
     if (getAccessToken()) {
       setStatus("authenticated");
+      return;
+    }
+
+    // 소셜 콜백은 이 페이지가 직접 인증을 끝내고 상태를 바꾼다.
+    // 여기서 복구까지 시도하면 쿠키가 심어지기 전에 재발급이 나가 401 이 한 번 더 뜬다.
+    if (isOAuthCallbackPath(window.location.pathname)) {
       return;
     }
 

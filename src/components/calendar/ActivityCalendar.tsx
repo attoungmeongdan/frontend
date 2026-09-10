@@ -1,11 +1,22 @@
 import { Check } from "lucide-react";
 import { LEGEND_EXERCISED_LABEL, LEGEND_TODAY_LABEL, WEEKDAY_LABELS } from "@/constants/calendar";
-import type { DayCell, MonthlyActivity } from "@/types/calendar";
+import { MAX_EXERCISE_COUNT, type DayCell, type MonthlyActivity } from "@/types/calendar";
 import { buildMonthGrid } from "@/utils/calendar";
 
 interface ActivityCalendarProps {
   activity: MonthlyActivity;
 }
+
+/** 수행 종목 수(1~4)별 배경색. 인덱스 0 은 쓰지 않는다 */
+const LEVEL_BACKGROUND = [
+  "",
+  "bg-exercise-level-1",
+  "bg-exercise-level-2",
+  "bg-exercise-level-3",
+  "bg-exercise-level-4",
+] as const;
+
+const LEVELS = Array.from({ length: MAX_EXERCISE_COUNT }, (_, index) => index + 1);
 
 // Feature/ActivityCalendar (fcYja) — 당월 달력. 월 이동 없음
 function ActivityCalendar({ activity }: ActivityCalendarProps) {
@@ -42,7 +53,11 @@ function ActivityCalendar({ activity }: ActivityCalendarProps) {
 
       <ul className="flex items-center gap-4">
         <li className="flex items-center gap-1.5">
-          <span className="bg-brand-mint size-3 rounded-full" aria-hidden />
+          <span className="flex items-center gap-1" aria-hidden>
+            {LEVELS.map((level) => (
+              <span key={level} className={`size-3 rounded-full ${LEVEL_BACKGROUND[level]}`} />
+            ))}
+          </span>
           <span className="text-text-secondary text-caption">{LEGEND_EXERCISED_LABEL}</span>
         </li>
         <li className="flex items-center gap-1.5">
@@ -57,21 +72,22 @@ function ActivityCalendar({ activity }: ActivityCalendarProps) {
   );
 }
 
-// 날짜 표시. 운동한 날은 민트 원 + 체크, 오늘은 강조 테두리
+// 날짜 표시. 수행 종목 수가 많을수록 원이 진해지고, 오늘은 강조 테두리를 더한다
 function DayMark({ cell }: { cell: DayCell }) {
-  const { date, isToday, isExercised, isFuture } = cell;
+  const { date, isToday, isFuture, exerciseCount } = cell;
 
   if (date === null) return null;
 
-  const label = `${date}일${isExercised ? " 운동함" : ""}${isToday ? " 오늘" : ""}`;
+  const todayLabel = isToday ? " 오늘" : "";
+  const label =
+    exerciseCount > 0 ? `${date}일 운동 ${exerciseCount}개${todayLabel}` : `${date}일${todayLabel}`;
+  const todayRing = isToday ? "border-brand-teal-strong border-2" : "";
 
-  if (isExercised) {
+  if (exerciseCount > 0) {
     return (
       <div
         aria-label={label}
-        className={`bg-brand-mint flex size-9 flex-col items-center justify-center rounded-full ${
-          isToday ? "border-brand-teal-strong border-2" : ""
-        }`}
+        className={`flex size-9 flex-col items-center justify-center rounded-full ${LEVEL_BACKGROUND[exerciseCount]} ${todayRing}`}
       >
         <Check size={14} className="text-action-primary-fg" aria-hidden />
         <span
@@ -88,9 +104,7 @@ function DayMark({ cell }: { cell: DayCell }) {
   return (
     <div
       aria-label={label}
-      className={`flex size-9 items-center justify-center rounded-full ${
-        isToday ? "border-brand-teal-strong border-2" : ""
-      }`}
+      className={`flex size-9 items-center justify-center rounded-full ${todayRing}`}
     >
       <span
         className={`text-body-small ${isFuture ? "text-text-secondary/40" : "text-text-primary"} ${
