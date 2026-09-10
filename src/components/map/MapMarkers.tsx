@@ -1,9 +1,15 @@
-import { Building2, House } from "lucide-react";
+import { House } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { RADIUS_LABEL, SEARCH_RADIUS_METERS } from "@/constants/map";
 import type { FacilityMarker } from "@/apis/facility";
+import {
+  CLUSTER_CALCULATOR,
+  CLUSTER_STYLES,
+  RADIUS_LABEL,
+  SEARCH_RADIUS_METERS,
+} from "@/constants/map";
 import type { Coordinates } from "@/types/map";
+import { FACILITY_MARKER_SIZE, FACILITY_MARKER_SRC } from "@/utils/markerImage";
 
 interface MapMarkersProps {
   map: kakao.maps.Map | null;
@@ -13,79 +19,111 @@ interface MapMarkersProps {
   onSelect: (facilityId: number) => void;
 }
 
-// 지도 위 마커. 집·공공시설 2종만 쓴다
-function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersProps) {
-  const rootsRef = useRef(new Map<string, Root>());
+/** 이 확대 수준보다 넓게 보면 마커를 묶는다 */
+const CLUSTER_MIN_LEVEL = 5;
 
+// 지도 위 마커. 집·공공시설 2종만 쓰고, 시설은 많아질 수 있어 클러스터로 묶는다
+function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersProps) {
+  const markersRef = useRef(new Map<number, kakao.maps.Marker>());
+
+  // 집 마커와 반경 라벨은 묶이면 안 되므로 오버레이로 따로 둔다
   useEffect(() => {
     const sdk = window.kakao;
     if (!map || !home || !sdk) return;
 
     const overlays: kakao.maps.CustomOverlay[] = [];
-    const roots = rootsRef.current;
+    const roots: Root[] = [];
 
-    const attach = (position: Coordinates, element: HTMLElement) => {
+    const attach = (position: Coordinates, node: React.ReactNode) => {
+      const element = document.createElement("div");
+      const root = createRoot(element);
+
+      root.render(node);
+      roots.push(root);
       overlays.push(
         new sdk.maps.CustomOverlay({
           map,
           position: new sdk.maps.LatLng(position.lat, position.lng),
           content: element,
-          clickable: true,
         }),
       );
     };
 
-    const homeElement = document.createElement("div");
-    const homeRoot = createRoot(homeElement);
-    homeRoot.render(<HomeMarker />);
-    roots.set("home", homeRoot);
-    attach(home, homeElement);
+    attach(home, <HomeMarker />);
 
-    const labelElement = document.createElement("div");
-    const labelRoot = createRoot(labelElement);
-    labelRoot.render(<RadiusLabel />);
-    roots.set("radius-label", labelRoot);
     // 반경 라벨은 원의 북쪽 끝에 둔다
     const latDelta = SEARCH_RADIUS_METERS / 111_320;
-    attach({ lat: home.lat + latDelta, lng: home.lng }, labelElement);
-
-    for (const facility of facilities) {
-      const element = document.createElement("div");
-      const root = createRoot(element);
-      root.render(
-        <FacilityMarker
-          label={facility.name}
-          isSelected={false}
-          onSelect={() => onSelect(facility.id)}
-        />,
-      );
-      roots.set(String(facility.id), root);
-      attach({ lat: facility.lat, lng: facility.lng }, element);
-    }
+    attach({ lat: home.lat + latDelta, lng: home.lng }, <RadiusLabel />);
 
     return () => {
       for (const overlay of overlays) overlay.setMap(null);
-      for (const root of roots.values()) queueMicrotask(() => root.unmount());
-      roots.clear();
+      for (const root of roots) queueMicrotask(() => root.unmount());
     };
-  }, [map, home, facilities, onSelect]);
+  }, [map, home]);
 
-  // 선택 상태만 바뀔 때는 마커를 다시 만들지 않고 내용만 갱신한다
+  // 시설 마커. 클러스터러는 CustomOverlay 를 받지 못해 Marker 로 만든다
   useEffect(() => {
-    const roots = rootsRef.current;
+    const sdk = window.kakao;
+    if (!map || !sdk) return;
 
-    for (const facility of facilities) {
-      roots
-        .get(String(facility.id))
-        ?.render(
-          <FacilityMarker
-            label={facility.name}
-            isSelected={facility.id === selectedId}
-            onSelect={() => onSelect(facility.id)}
-          />,
-        );
+    const size = new sdk.maps.Size(FACILITY_MARKER_SIZE, FACILITY_MARKER_SIZE);
+    const offset = new sdk.maps.Point(FACILITY_MARKER_SIZE / 2, FACILITY_MARKER_SIZE / 2);
+    const defaultImage = new sdk.maps.MarkerImage(FACILITY_MARKER_SRC.default, size, { offset });
+    const markerById = markersRef.current;
+
+    const markers = facilities.map((facility) => {
+      const marker = new sdk.maps.Marker({
+        position: new sdk.maps.LatLng(facility.lat, facility.lng),
+        image: defaultImage,
+        title: facility.name,
+      });
+
+      sdk.maps.event.addListener(marker, "click", () => onSelect(facility.id));
+      markerById.set(facility.id, marker);
+
+      return marker;
+    });
+
+    const clusterer = new sdk.maps.MarkerClusterer({
+      map,
+      markers,
+      averageCenter: true,
+      minLevel: CLUSTER_MIN_LEVEL,
+      calculator: [...CLUSTER_CALCULATOR],
+      styles: CLUSTER_STYLES.map(({ size, background }) => ({
+        width: `${size}px`,
+        height: `${size}px`,
+        background,
+        borderRadius: `${size / 2}px`,
+        color: "#fff",
+        textAlign: "center",
+        lineHeight: `${size}px`,
+        fontSize: "14px",
+        fontWeight: "700",
+      })),
+    });
+
+    return () => {
+      clusterer.clear();
+      for (const marker of markers) marker.setMap(null);
+      markerById.clear();
+    };
+  }, [map, facilities, onSelect]);
+
+  // 선택 상태가 바뀌면 마커 이미지만 교체한다
+  useEffect(() => {
+    const sdk = window.kakao;
+    if (!sdk) return;
+
+    const size = new sdk.maps.Size(FACILITY_MARKER_SIZE, FACILITY_MARKER_SIZE);
+    const offset = new sdk.maps.Point(FACILITY_MARKER_SIZE / 2, FACILITY_MARKER_SIZE / 2);
+
+    for (const [id, marker] of markersRef.current) {
+      const src = id === selectedId ? FACILITY_MARKER_SRC.selected : FACILITY_MARKER_SRC.default;
+
+      marker.setImage(new sdk.maps.MarkerImage(src, size, { offset }));
     }
-  }, [facilities, selectedId, onSelect]);
+  }, [selectedId, facilities]);
 
   return null;
 }
@@ -99,34 +137,6 @@ function HomeMarker() {
     >
       <House size={18} className="text-action-primary-fg" aria-hidden />
     </div>
-  );
-}
-
-function FacilityMarker({
-  label,
-  isSelected,
-  onSelect,
-}: {
-  label: string;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onSelect}
-      aria-pressed={isSelected}
-      className={`border-brand-teal-strong flex size-9 items-center justify-center rounded-full border ${
-        isSelected ? "bg-brand-teal-strong" : "bg-surface-default"
-      }`}
-    >
-      <Building2
-        size={18}
-        aria-hidden
-        className={isSelected ? "text-action-primary-fg" : "text-brand-teal-strong"}
-      />
-    </button>
   );
 }
 
