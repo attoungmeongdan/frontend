@@ -33,7 +33,6 @@
   --color-nav-active-icon: var(--color-brand-teal);
   --color-nav-active-label: var(--color-brand-teal-strong);
   --color-focus-ring: var(--color-brand-teal-strong);
-  --color-feedback-error: var(--color-brand-teal-strong);
   --color-field-border-strong: var(--color-text-secondary);
 
   /* 입력 오류 피드백. 디자인상 빨강이 아니라 청록이다 (빨강은 결과 UI 전용) */
