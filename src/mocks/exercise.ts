@@ -16,6 +16,7 @@ export const EXERCISE_CAMERA_STATES: ExerciseSessionMock["state"][] = [
   "permission-denied",
   "camera-unavailable",
   "camera-busy",
+  "model-error",
   "disconnected",
 ];
 
