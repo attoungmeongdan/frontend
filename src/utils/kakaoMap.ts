@@ -37,7 +37,7 @@ function injectSdk(): Promise<typeof kakao> {
     const script = document.createElement("script");
     script.id = SDK_SCRIPT_ID;
     script.async = true;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=clusterer&autoload=false`;
     script.addEventListener("load", handleLoad, { once: true });
     script.addEventListener(
       "error",
