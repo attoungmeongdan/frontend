@@ -22,7 +22,11 @@ export async function createWorkoutSession(
 ) {
   const response = await axiosInstance.post<CommonResponse<ExerciseSessionCreateResponse>>(
     "/api/v1/exercise-sessions",
-    { mode, exerciseType, ...(measurementGroupId ? { measurementGroupId } : {}) },
+    {
+      mode,
+      exerciseType,
+      ...(mode === "MEASUREMENT" && measurementGroupId ? { measurementGroupId } : {}),
+    },
   );
 
   return response.data.data;

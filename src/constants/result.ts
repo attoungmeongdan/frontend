@@ -11,8 +11,8 @@ export interface MeasurementResultExercise {
 // 체력 측정 4종목 결과 표시 순서. 체력 측정 진행 순서와 같다
 export const MEASUREMENT_RESULT_EXERCISES: MeasurementResultExercise[] = [
   { type: "chair-stand", name: "의자앉았다일어나기", valueKind: "count" },
-  { type: "sit-up", name: "윗몸일으키기", valueKind: "count" },
   { type: "push-up", name: "팔굽혀펴기", valueKind: "count" },
+  { type: "sit-up", name: "윗몸일으키기", valueKind: "count" },
   { type: "plank", name: "플랭크", valueKind: "time" },
 ];
 

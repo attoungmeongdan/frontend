@@ -129,7 +129,8 @@ describe("measurement completion and recovery", () => {
     const socket = await start(hook);
     act(() => socket.message({ type: "SESSION_COMPLETED", sessionId: 99 }));
     expect(hook.onCompleted).not.toHaveBeenCalled();
-    act(() => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
+    vi.mocked(api.getWorkoutSessionResult).mockResolvedValue(stored("COMPLETED"));
+    await act(async () => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
     expect(hook.onCompleted).toHaveBeenCalledExactlyOnceWith(1, "group-1");
   });
 
@@ -176,7 +177,8 @@ describe("measurement completion and recovery", () => {
       });
       act(() => hook.result.current.sendPoseFrame(poseFor("chair-stand", 1280, 720)));
       expect(JSON.parse(next.send.mock.calls[0][0])).toMatchObject({ sessionId: 2, sequence: 1 });
-      act(() => next.message({ type: "SESSION_COMPLETED", sessionId: 2 }));
+      vi.mocked(api.getWorkoutSessionResult).mockResolvedValue(stored("COMPLETED", 2));
+      await act(async () => next.message({ type: "SESSION_COMPLETED", sessionId: 2 }));
       expect(hook.onCompleted).toHaveBeenCalledExactlyOnceWith(2, "group-1");
     },
   );
@@ -184,7 +186,8 @@ describe("measurement completion and recovery", () => {
   it("uses regular creation for the next exercise after successful completion", async () => {
     const hook = setup();
     const socket = await start(hook);
-    act(() => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
+    vi.mocked(api.getWorkoutSessionResult).mockResolvedValue(stored("COMPLETED"));
+    await act(async () => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
     vi.mocked(api.createWorkoutSession).mockResolvedValue(session(3));
     await start(hook);
     expect(api.createWorkoutSession).toHaveBeenCalledTimes(2);

@@ -8,6 +8,9 @@ async function setupMeasurement(page: Page, interrupted = false) {
   const requests: { mode: string; exerciseType: string; measurementGroupId?: string }[] = [];
   let resumeCalls = 0;
   let id = 100;
+  let saved = 0;
+  let exercise = "CHAIR_STAND";
+  const order = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"];
   let status = "MEASURING";
   let socket: WebSocketRoute;
   const connections: string[] = [];
@@ -25,10 +28,10 @@ async function setupMeasurement(page: Page, interrupted = false) {
     route.fulfill({
       json: {
         data: {
-          measurementGroupId: interrupted ? "group-1" : null,
-          completedExercises: [],
-          nextExerciseType: "CHAIR_STAND",
-          completed: false,
+          measurementGroupId: interrupted || id > 100 ? "group-1" : null,
+          completedExercises: order.slice(0, saved),
+          nextExerciseType: order[saved] ?? null,
+          completed: saved === 4,
         },
       },
     }),
@@ -36,6 +39,7 @@ async function setupMeasurement(page: Page, interrupted = false) {
   await page.route("**/api/v1/exercise-sessions", (route) => {
     const body = route.request().postDataJSON();
     requests.push(body);
+    exercise = body.exerciseType;
     status = "MEASURING";
     return route.fulfill({ json: { data: response(body.exerciseType) } });
   });
@@ -48,7 +52,15 @@ async function setupMeasurement(page: Page, interrupted = false) {
   });
   await page.route("**/api/v1/exercise-sessions/*/result", (route) =>
     route.fulfill({
-      json: { data: { sessionId: id, measurementGroupId: "group-1", status } },
+      json: {
+        data: {
+          sessionId: id,
+          mode: "MEASUREMENT",
+          exerciseType: exercise,
+          measurementGroupId: "group-1",
+          status,
+        },
+      },
     }),
   );
   await page.routeWebSocket("**/ws/v1/exercise-sessions/*", (ws) => {
@@ -61,6 +73,7 @@ async function setupMeasurement(page: Page, interrupted = false) {
     resumeCalls: () => resumeCalls,
     complete: (event = true) => {
       status = "COMPLETED";
+      saved++;
       socket.send(
         JSON.stringify(
           event
@@ -94,6 +107,7 @@ async function enter(page: Page) {
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto("/measure");
   await page.getByRole("button", { name: "알겠어요" }).click();
+  await page.getByRole("button", { name: "준비됐어요" }).click();
   await expect(page.getByText("자세를 취하고 운동하면 자동으로 측정이 시작돼요")).toBeVisible();
 }
 
@@ -107,9 +121,12 @@ test("measurement advances through all exercises when the first completion event
     await setPose(page, type);
     await expect.poll(() => fixture.connections.length).toBe(index + 1);
     fixture.complete(index > 0);
-    if (index < 3)
+    if (index < 3) {
+      await page.getByRole("button", { name: "준비됐어요" }).click();
       await expect(page.getByText("자세를 취하고 운동하면 자동으로 측정이 시작돼요")).toBeVisible();
+    }
   }
+  await page.getByRole("button", { name: "측정 분석 보기" }).click();
   await expect(page).toHaveURL(/\/measurements\/group-1\/analysis/);
   expect(fixture.requests).toEqual([
     { mode: "MEASUREMENT", exerciseType: "CHAIR_STAND" },

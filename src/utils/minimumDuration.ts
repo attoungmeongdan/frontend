@@ -1,0 +1,13 @@
+/** Start the timer with the request, including failures; slow requests incur no extra delay. */
+export async function withMinimumDuration<T>(
+  work: () => Promise<T>,
+  milliseconds = 500,
+): Promise<T> {
+  if (milliseconds <= 0) return work();
+  const minimum = new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+  try {
+    return await work();
+  } finally {
+    await minimum;
+  }
+}
