@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react";
-import turtleGuide from "@/assets/mascots/turtle-guide.png";
-import turtleSad from "@/assets/mascots/turtle-sad.png";
+import turtleGuide from "@/assets/mascots/turtle-guide.webp";
+import turtleSad from "@/assets/mascots/turtle-sad.webp";
 import Button from "@/components/ui/Button";
 import { RECOMMENDATION_MESSAGES, RECOMMENDATION_TITLE } from "@/constants/mypage";
 import type { AiInsight } from "@/types/exercise";

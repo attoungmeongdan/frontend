@@ -1,7 +1,7 @@
-import chairStand from "@/assets/exercises/exercise-chair-stand.png";
-import plank from "@/assets/exercises/exercise-plank.png";
-import pushUp from "@/assets/exercises/exercise-push-up.png";
-import sitUp from "@/assets/exercises/exercise-sit-up.png";
+import chairStand from "@/assets/exercises/exercise-chair-stand.webp";
+import plank from "@/assets/exercises/exercise-plank.webp";
+import pushUp from "@/assets/exercises/exercise-push-up.webp";
+import sitUp from "@/assets/exercises/exercise-sit-up.webp";
 
 import type { ApiExerciseType, MeasurementHistoryKey } from "@/types/exercise";
 
