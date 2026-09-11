@@ -32,7 +32,6 @@ function toGroup(group: GroupResponse, members: GroupMember[]): Group {
   return {
     id: group.id,
     name: group.name,
-    penalty: group.penalty,
     maxMemberCount: group.maxMemberCount,
     currentMemberCount: group.currentMemberCount,
     ownerId: group.ownerId,

@@ -24,9 +24,15 @@ export interface OAuthSignupRequest {
   };
 }
 
-export async function getAuthorizeUrl(provider: SocialProvider) {
+/**
+ * 소셜 로그인 주소를 받는다.
+ * 초대 링크로 들어온 미로그인 사용자는 inviteCode 를 함께 넘기면
+ * 서버가 로그인·가입을 마치는 시점에 그 그룹으로 자동 참가시킨다.
+ */
+export async function getAuthorizeUrl(provider: SocialProvider, inviteCode?: string) {
   const { data } = await axiosInstance.get<CommonResponse<{ authorizeUrl: string }>>(
     `/api/v1/auth/oauth2/${provider}/authorize`,
+    inviteCode ? { params: { inviteCode } } : undefined,
   );
 
   return data.data.authorizeUrl;

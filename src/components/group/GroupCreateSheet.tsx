@@ -2,13 +2,7 @@ import { useEffect, useId, useState } from "react";
 import BottomSheet from "@/components/common/BottomSheet";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
-import {
-  DEFAULT_PENALTY,
-  FREE_PRICE_LABEL,
-  GROUP_SHEET,
-  MEMBER_COUNT_OPTIONS,
-  groupPrice,
-} from "@/constants/group";
+import { FREE_PRICE_LABEL, GROUP_SHEET, MEMBER_COUNT_OPTIONS, groupPrice } from "@/constants/group";
 import type { CreateGroupRequest } from "@/apis/group";
 
 interface GroupCreateSheetProps {
@@ -49,9 +43,8 @@ function GroupCreateSheet({
         className="flex flex-col gap-3"
         onSubmit={(event) => {
           event.preventDefault();
-          // 벌칙은 서버 필수값이라 입력 칸이 없어도 기본값을 채워 보낸다
           if (canSubmit) {
-            onSubmit({ name: trimmedName, penalty: DEFAULT_PENALTY, maxMemberCount });
+            onSubmit({ name: trimmedName, maxMemberCount });
           }
         }}
       >
