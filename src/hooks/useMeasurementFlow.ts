@@ -14,6 +14,7 @@ import {
   MEASUREMENT_ORDER,
   MEASUREMENT_PROGRESS_KEY,
 } from "@/utils/measurementProgress";
+import { CompletionPendingError } from "@/utils/completionVerification";
 import { withMinimumDuration } from "@/utils/minimumDuration";
 
 export type MeasurementPhase =
@@ -181,11 +182,13 @@ export function useMeasurementFlow() {
       const progress = await getMeasurementProgress();
       if (generation !== generationRef.current)
         throw new Error("측정 진행 상태가 변경됐어요. 다시 확인해 주세요.");
-      if (
-        progress.measurementGroupId !== result.measurementGroupId ||
-        !progress.completedExercises.includes(result.exerciseType)
-      ) {
-        throw new Error("현재 종목의 저장을 확인하지 못했어요. 저장 확인을 다시 시도해 주세요.");
+      if (progress.measurementGroupId !== result.measurementGroupId) {
+        throw new Error("현재 측정 그룹의 저장 결과가 아니에요. 진행 상태를 다시 확인해 주세요.");
+      }
+      if (!progress.completedExercises.includes(result.exerciseType)) {
+        throw new CompletionPendingError(
+          "현재 종목의 저장을 확인하지 못했어요. 저장 확인을 다시 시도해 주세요.",
+        );
       }
       getMeasurementPosition(progress);
       cacheProgress(progress);
