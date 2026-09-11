@@ -117,6 +117,8 @@ export function buildMemberActivity(
     year,
     month,
     today: isCurrentMonth ? seoulToday.date : null,
+    // 팀원 가입일은 그룹 API 가 내려주기 전까지 알 수 없어 회색 처리를 하지 않는다
+    joinedDay: null,
     totalTargetDays: lastDay,
     exercisedDays,
   };

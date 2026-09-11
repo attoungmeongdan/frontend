@@ -11,13 +11,13 @@ export interface SeoulDay extends SeoulDate {
   weekday: number;
 }
 
-export function getSeoulToday(): SeoulDate {
+function toSeoulDate(instant: Date): SeoulDate {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: SEOUL_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(instant);
 
   const findPart = (type: Intl.DateTimeFormatPartTypes) =>
     Number(parts.find((part) => part.type === type)?.value);
@@ -27,6 +27,32 @@ export function getSeoulToday(): SeoulDate {
     month: findPart("month"),
     date: findPart("day"),
   };
+}
+
+export function getSeoulToday(): SeoulDate {
+  return toSeoulDate(new Date());
+}
+
+/**
+ * 서버 일시 문자열을 KST 날짜로 바꾼다.
+ * "2026-08-25" 나 "2026-08-25T10:00:00" 처럼 시간대가 없으면 KST 로 보고 날짜 부분만 쓴다.
+ * "…Z" 나 "+09:00" 처럼 시간대가 있으면 KST 로 환산한다. 파싱할 수 없으면 null
+ */
+export function parseSeoulDate(value: string | null | undefined): SeoulDate | null {
+  if (!value) return null;
+
+  const hasZone = /(Z|[+-]\d{2}:?\d{2})$/.test(value);
+  if (!hasZone) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!match) return null;
+
+    return { year: Number(match[1]), month: Number(match[2]), date: Number(match[3]) };
+  }
+
+  const instant = new Date(value);
+  if (Number.isNaN(instant.getTime())) return null;
+
+  return toSeoulDate(instant);
 }
 
 export function getRecentSeoulDays(count: number): SeoulDay[] {

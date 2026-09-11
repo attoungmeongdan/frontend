@@ -153,6 +153,7 @@ function GroupPage() {
                   onNextMonth={() =>
                     setView((current) => shiftMonth(current.year, current.month, 1))
                   }
+                  canGoPrev
                   canGoNext={!isCurrentMonth}
                 />
               </>
