@@ -1,3 +1,17 @@
+import type { WorkoutComparison } from "@/types/exercise";
+import type { ResultComparison } from "@/types/result";
+
+const WORKOUT_COMPARISON_MAP: Record<WorkoutComparison, ResultComparison> = {
+  LOW: "low",
+  SIMILAR: "similar",
+  HIGH: "high",
+};
+
+/** 서버 비교 코드(LOW/SIMILAR/HIGH)를 카드 표시용 값으로 바꾼다. 없으면 비교 정보 없음 */
+export function toResultComparison(value: WorkoutComparison | null): ResultComparison | undefined {
+  return value ? WORKOUT_COMPARISON_MAP[value] : undefined;
+}
+
 /** 초를 `m:ss` 로 표시한다. 예: 60 → "1:00" */
 export function formatDurationClock(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);

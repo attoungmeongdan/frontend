@@ -10,6 +10,7 @@ import ExerciseResultCard from "@/components/result/ExerciseResultCard";
 import Button from "@/components/ui/Button";
 import MascotSpeech from "@/components/ui/MascotSpeech";
 import { MEASUREMENT_RESULT_EXERCISES, RESULT_VALUE_UNIT } from "@/constants/result";
+import { useMeasurementAnalysis } from "@/hooks/useMeasurementAnalysis";
 import {
   ANALYSIS_EMPTY_MOCK,
   ANALYSIS_MOCK,
@@ -42,41 +43,81 @@ function selectMockView(mockState: AnalysisMockState): AnalysisView {
 
 // 06_Analysis — /measurements/:id/analysis
 function MeasurementAnalysisPage() {
-  // 측정 ID 로 조회하는 것은 API 연동(#15) 범위다. 목데이터는 ID 와 무관하게 같은 결과를 보여준다
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const mockState = readAnalysisMockState(searchParams.get("state"));
+  const stateParam = searchParams.get("state");
+  const mockState = readAnalysisMockState(stateParam);
+  // ?state= 가 아예 없을 때만 실제 API 를 쓴다. ?state=default 는 여전히 전체 성공 목데이터를
+  // 강제로 보여줘, 실제 완료된 measurementGroupId 없이도 성공 화면을 확인할 수 있다
+  const isMocked = stateParam !== null;
 
   // 측정 ID 나 목 상태가 바뀌면 재시도 진행 상태를 초기화한다
-  return <MeasurementAnalysis key={`${id}:${mockState}`} mockState={mockState} />;
+  return (
+    <MeasurementAnalysis
+      key={`${id}:${mockState}:${isMocked}`}
+      measurementGroupId={id}
+      mockState={mockState}
+      isMocked={isMocked}
+    />
+  );
 }
 
-function MeasurementAnalysis({ mockState }: { mockState: AnalysisMockState }) {
+function MeasurementAnalysis({
+  measurementGroupId,
+  mockState,
+  isMocked,
+}: {
+  measurementGroupId?: string;
+  mockState: AnalysisMockState;
+  isMocked: boolean;
+}) {
   const navigate = useNavigate();
   const [retryPhase, setRetryPhase] = useState<RetryPhase>("idle");
 
-  // 목 재시도: 잠시 로딩을 보여 준 뒤 기본 결과로 전환한다. 연동 시 쿼리 refetch 로 교체
+  // 목 재시도: 잠시 로딩을 보여 준 뒤 기본 결과로 전환한다
   useEffect(() => {
-    if (retryPhase !== "loading") return;
+    if (!isMocked || retryPhase !== "loading") return;
 
     const timer = window.setTimeout(() => setRetryPhase("done"), MOCK_RETRY_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [retryPhase]);
+  }, [isMocked, retryPhase]);
 
-  if (mockState === "loading" || retryPhase === "loading") {
+  const analysis = useMeasurementAnalysis(isMocked ? undefined : measurementGroupId);
+
+  if (isMocked) {
+    if (mockState === "loading" || retryPhase === "loading") {
+      return <AnalysisLoading />;
+    }
+
+    if (mockState === "error" && retryPhase === "idle") {
+      return <AnalysisStatusMessage state="error" onAction={() => setRetryPhase("loading")} />;
+    }
+
+    const view = retryPhase === "done" ? ANALYSIS_MOCK : selectMockView(mockState);
+
+    if (view.results.length === 0) {
+      return <AnalysisStatusMessage state="empty" onAction={() => navigate("/")} />;
+    }
+
+    return <AnalysisResultView view={view} onMapClick={() => navigate("/map")} />;
+  }
+
+  if (analysis.status === "loading") {
     return <AnalysisLoading />;
   }
 
-  if (mockState === "error" && retryPhase === "idle") {
-    return <AnalysisStatusMessage state="error" onAction={() => setRetryPhase("loading")} />;
-  }
-
-  const view = retryPhase === "done" ? ANALYSIS_MOCK : selectMockView(mockState);
-
-  if (view.results.length === 0) {
+  if (analysis.status === "empty") {
     return <AnalysisStatusMessage state="empty" onAction={() => navigate("/")} />;
   }
 
+  if (analysis.status === "error") {
+    return <AnalysisStatusMessage state="error" onAction={analysis.retry} />;
+  }
+
+  return <AnalysisResultView view={analysis.view} onMapClick={() => navigate("/map")} />;
+}
+
+function AnalysisResultView({ view, onMapClick }: { view: AnalysisView; onMapClick: () => void }) {
   const hasComparison = view.distribution !== null;
 
   return (
@@ -118,7 +159,7 @@ function MeasurementAnalysis({ mockState }: { mockState: AnalysisMockState }) {
           mascot={turtleGuide}
           message={MAP_GUIDE_MESSAGE}
           action={
-            <Button type="button" onClick={() => navigate("/map")}>
+            <Button type="button" onClick={onMapClick}>
               지도 보기
             </Button>
           }
