@@ -13,6 +13,8 @@ interface ActivityCalendarProps {
   activity: MonthlyActivity;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  /** 가입한 달을 보고 있으면 이전 달로 갈 수 없다. 가입 전 기록은 없다 */
+  canGoPrev: boolean;
   /** 이번 달을 보고 있으면 다음 달로 갈 수 없다. 미래 기록은 없다 */
   canGoNext: boolean;
 }
@@ -37,6 +39,7 @@ function ActivityCalendar({
   activity,
   onPrevMonth,
   onNextMonth,
+  canGoPrev,
   canGoNext,
 }: ActivityCalendarProps) {
   const navigate = useNavigate();
@@ -52,8 +55,9 @@ function ActivityCalendar({
         <button
           type="button"
           onClick={onPrevMonth}
+          disabled={!canGoPrev}
           aria-label="이전 달 보기"
-          className="text-text-secondary flex size-8 items-center justify-center rounded-full"
+          className="text-text-secondary flex size-8 items-center justify-center rounded-full disabled:opacity-30"
         >
           <ChevronLeft size={20} aria-hidden />
         </button>
@@ -130,21 +134,23 @@ interface DayMarkProps {
  * 측정한 날은 눌러서 측정 분석 화면으로 갈 수 있다.
  */
 function DayMark({ cell, onOpenAnalysis }: DayMarkProps) {
-  const { date, isToday, isFuture, exerciseCount, measurementId } = cell;
+  const { date, isToday, isFuture, isBeforeJoin, exerciseCount, measurementId } = cell;
 
   if (date === null) return null;
 
   const isMeasured = measurementId !== null;
   const todayLabel = isToday ? " 오늘" : "";
   const measuredLabel = isMeasured ? " 체력 측정 완료" : "";
+  const beforeJoinLabel = isBeforeJoin ? " 가입 전" : "";
   // 운동·측정·오늘은 서로 독립이라 분기 대신 조각을 이어붙인다.
   // 분기로 두면 측정만 한 날(count 0 + measured)에서 측정 정보가 빠진다
   const exerciseLabel = exerciseCount > 0 ? ` 운동 ${exerciseCount}개` : "";
-  const label = `${date}일${exerciseLabel}${measuredLabel}${todayLabel}`;
+  const label = `${date}일${exerciseLabel}${measuredLabel}${todayLabel}${beforeJoinLabel}`;
 
+  // 가입 전·미래 날짜는 기록이 있을 수 없어 같은 회색으로 흐리게 둔다
   const numberTone = isToday
     ? "font-bold"
-    : isFuture
+    : isFuture || isBeforeJoin
       ? "text-text-secondary/40"
       : "text-text-primary";
 

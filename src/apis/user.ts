@@ -31,6 +31,8 @@ export interface UserProfile {
   bmi: number | null;
   /** 기존 가입자 중 미등록이면 null */
   address: UserAddress | null;
+  /** 가입 일시(ISO date-time). 캘린더에서 가입일 이전 날짜를 가리는 데 쓴다 */
+  createdAt: string;
 }
 
 // 내 프로필 조회

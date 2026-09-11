@@ -23,7 +23,7 @@ function toRecordByDay({ exercisedDays }: MonthlyActivity) {
  * 앞뒤 빈 칸은 date 가 null 이며, 전월·익월 날짜는 표시하지 않는다.
  */
 export function buildMonthGrid(activity: MonthlyActivity): DayCell[][] {
-  const { year, month, today } = activity;
+  const { year, month, today, joinedDay } = activity;
   const lastDate = getLastDate(year, month);
   const leadingBlanks = getFirstWeekday(year, month);
   const recordByDay = toRecordByDay(activity);
@@ -33,13 +33,16 @@ export function buildMonthGrid(activity: MonthlyActivity): DayCell[][] {
     Array.from({ length: DAYS_IN_WEEK }, (_, weekday): DayCell => {
       const date = week * DAYS_IN_WEEK + weekday - leadingBlanks + 1;
       const isInMonth = date >= 1 && date <= lastDate;
-      const record = isInMonth ? recordByDay.get(date) : undefined;
+      const isBeforeJoin = isInMonth && joinedDay !== null && date < joinedDay;
+      // 가입 전 날짜는 기록이 있어도 그리지 않는다
+      const record = isInMonth && !isBeforeJoin ? recordByDay.get(date) : undefined;
       const exerciseCount = record?.count ?? 0;
 
       return {
         date: isInMonth ? date : null,
         isToday: isInMonth && date === today,
         isFuture: isInMonth && today !== null && date > today,
+        isBeforeJoin,
         exerciseCount,
         measurementId: record?.measurementId ?? null,
       };
