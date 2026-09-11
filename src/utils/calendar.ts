@@ -1,5 +1,5 @@
 import { MASCOT_MESSAGES } from "@/constants/calendar";
-import type { DayCell, MonthlyActivity, MonthlyRate } from "@/types/calendar";
+import type { DayCell, MonthlyActivity } from "@/types/calendar";
 
 const DAYS_IN_WEEK = 7;
 
@@ -45,26 +45,6 @@ export function buildMonthGrid(activity: MonthlyActivity): DayCell[][] {
       };
     }),
   );
-}
-
-/**
- * 이번 달 운동 실행률. 미래 날짜는 분모에서 제외한다.
- * 1일에 아직 운동하지 않았을 때만 산출하지 않는다. 하루치로 0% 를 보여줄 이유가 없다.
- */
-export function calculateMonthlyRate({
-  today,
-  totalTargetDays,
-  exercisedDays,
-}: MonthlyActivity): MonthlyRate {
-  // 측정만 하고 자유 운동을 하지 않은 날은 운동한 날로 세지 않는다
-  const exercisedCount = exercisedDays.filter(({ count }) => count > 0).length;
-  const isUnavailable = today === 1 && exercisedCount === 0;
-
-  return {
-    totalTargetDays,
-    exercisedCount,
-    percent: isUnavailable ? null : Math.round((exercisedCount / totalTargetDays) * 100),
-  };
 }
 
 /** 어제·오늘 운동 여부 조합에 맞는 마스코트 멘트 */
