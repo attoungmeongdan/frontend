@@ -53,3 +53,13 @@ export const SHEET_INFO_VALUE =
   "공공데이터 제공 항목만 표시 — 미제공 전화·운영시간은 표기하지 않음";
 
 export const SHEET_CLOSE_LABEL = "닫기";
+
+/** 시설 좌표에서 이 거리(m) 안의 거리 사진을 찾는다. 시설은 도로 안쪽이 많아 넉넉히 잡는다 */
+export const ROADVIEW_SEARCH_RADIUS_METERS = 150;
+
+export const ROADVIEW_MESSAGES = {
+  loading: "거리뷰를 불러오고 있어요",
+  unavailable: "이 시설은 거리뷰가 없어요",
+} as const;
+
+export const ROADVIEW_LABEL = "거리뷰";
