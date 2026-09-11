@@ -4,6 +4,8 @@ export interface HeaderConfig {
   title?: string;
   /** 좌측 뒤로가기 버튼 노출 여부 */
   showBack?: boolean;
+  /** 우측 닫기 버튼 노출 여부. 결과 화면을 닫고 홈으로 이동 */
+  showClose?: boolean;
   /** 뒤로가기 목적지. 없으면 history back */
   backTo?: string;
 }
@@ -15,4 +17,6 @@ export interface LayoutHandle {
   bottomNav?: boolean;
   /** 카메라 화면처럼 본문 여백 없이 꽉 채우는 경우 */
   fullBleed?: boolean;
+  /** 카메라 화면처럼 데스크톱·가로 화면에서도 모바일 셸 너비를 제한하지 않는 경우 */
+  fullViewport?: boolean;
 }

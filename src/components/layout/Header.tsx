@@ -1,13 +1,20 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
 
-// UI/Header (swKmr) — 높이 56, 좌우 44x44 슬롯, 중앙 워드마크 또는 타이틀
-function Header({ title, showBack = false, backTo }: HeaderConfig) {
+type HeaderProps = HeaderConfig & {
+  onBack?: () => void;
+};
+
+function Header({ title, showBack = false, showClose = false, backTo, onBack }: HeaderProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (backTo) {
       navigate(backTo);
       return;
@@ -36,7 +43,18 @@ function Header({ title, showBack = false, backTo }: HeaderConfig) {
         <img src={wordmark} alt="Fittle" className="h-7 w-21 object-contain" />
       )}
 
-      <div className="size-11" />
+      <div className="flex size-11 items-center justify-center">
+        {showClose && (
+          <button
+            type="button"
+            aria-label="닫고 홈으로 돌아가기"
+            onClick={() => navigate("/")}
+            className="text-text-primary flex size-11 items-center justify-center"
+          >
+            <X size={24} aria-hidden />
+          </button>
+        )}
+      </div>
     </header>
   );
 }

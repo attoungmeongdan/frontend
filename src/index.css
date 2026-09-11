@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* FitPle-v2.1.pen 디자인 토큰
+/* Fittle-v2.1.pen 디자인 토큰
    - 색/반경/그림자/타이포는 디자인 파일 값을 그대로 옮김
    - spacing 4/8/12/16/20/24/32/40/48 은 Tailwind 기본 4px 스케일과 동일해서 별도 정의 안 함 */
 @theme {
@@ -19,6 +19,8 @@
   --color-border-default: #dce7e5;
   --color-border-footer: #dde5e5;
   --color-destructive: #e76751;
+  --color-camera-backdrop: #2e3a3a;
+  --color-camera-overlay: #25313199;
   --color-camera-scrim: #253131b8;
 
   /* 색 - 결과 전용 (동연령대 평균 대비). 결과 UI 밖에서는 쓰지 않고 항상 텍스트로 의미 병기 */
@@ -33,7 +35,21 @@
   --color-nav-active-icon: var(--color-brand-teal);
   --color-nav-active-label: var(--color-brand-teal-strong);
   --color-focus-ring: var(--color-brand-teal-strong);
+
+  /* 입력 오류 피드백. 디자인상 빨강이 아니라 청록이다 (빨강은 결과 UI 전용) */
+  --color-feedback-error: var(--color-brand-teal-strong);
   --color-field-border-strong: var(--color-text-secondary);
+
+  /* 색 - 온보딩 Tip 카드 (투명도 섞인 값이라 별도 토큰)
+     이름에 note 를 쓰면 --text-note-title 타이포 토큰과 text-* 유틸이 충돌하므로 tip 으로 둔다 */
+  --color-tip-label: #136b6b99;
+  --color-tip-title: #0f989a99;
+  --color-tip-desc: #667575bf;
+
+  /* 색 - 외부 브랜드. 디자인 시스템 색이 아니므로 소셜 로그인 버튼 밖에서 쓰지 않는다 */
+  --color-kakao-yellow: #fee500;
+  --color-kakao-label: #181600;
+  --color-google-border: #e6e7e9;
 
   /* 타이포 - 기본 스케일 */
   --text-display: 32px;
@@ -60,9 +76,18 @@
   --text-button: 16px;
   --text-button--line-height: 20px;
   --text-button--font-weight: 600;
-  --text-camera-number: 64px;
-  --text-camera-number--line-height: 72px;
+  --text-camera-number: 80px;
+  --text-camera-number--line-height: 88px;
   --text-camera-number--font-weight: 700;
+  --text-camera-number-landscape: 64px;
+  --text-camera-number-landscape--line-height: 72px;
+  --text-camera-number-landscape--font-weight: 700;
+  --text-camera-count: 88px;
+  --text-camera-count--line-height: 96px;
+  --text-camera-count--font-weight: 700;
+  --text-camera-count-landscape: 72px;
+  --text-camera-count-landscape--line-height: 80px;
+  --text-camera-count-landscape--font-weight: 700;
 
   /* 타이포 - 화면 작업에서 추가된 것 */
   --text-guide: 15px;
