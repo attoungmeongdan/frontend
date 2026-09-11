@@ -30,8 +30,8 @@ export const EXERCISES: Exercise[] = [
     type: "chair-stand",
     apiType: "CHAIR_STAND",
     historyKey: "chairStand",
-    label: "의자 앉았다 일어나기",
-    cardLabel: "의자 앉았다 일어나기",
+    label: "스쿼트",
+    cardLabel: "스쿼트",
     icon: chairStand,
   },
   {

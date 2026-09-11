@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { withMinimumDuration } from "@/utils/minimumDuration";
 import ExerciseCard from "@/components/home/ExerciseCard";
 import MeasureBubble from "@/components/home/MeasureBubble";
 import StreakCard from "@/components/home/StreakCard";
@@ -28,27 +29,51 @@ function HomePage() {
   const [openModal, setOpenModal] = useState<"resume" | "complete" | null>(null);
 
   const { streak } = useWeeklyStreak();
-  const { measurementState: serverState, isLoading: isStateLoading } = useMeasurementState();
+  const {
+    measurementState,
+    progress,
+    isLoading: isStateLoading,
+    isError,
+    refetch,
+  } = useMeasurementState();
+  const busyRef = useRef(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [checkError, setCheckError] = useState(false);
   const { trend } = useMeasurementTrend();
-
-  // 측정 페이지가 없어 재개·완료 상태를 만들 수 없으므로, 모달 확인용 override 를 남겨둔다.
-  // 측정 플로우가 붙으면 이 세 줄은 지운다.
-  const [searchParams] = useSearchParams();
-  const stateParam = searchParams.get("state");
-  const measurementState: MeasurementState =
-    stateParam === "new" || stateParam === "resume" || stateParam === "complete"
-      ? stateParam
-      : serverState;
 
   const hasTrend = Object.values(trend).some((points) => points.length >= 2);
 
-  const handleMeasure = () => {
-    if (measurementState === "resume" || measurementState === "complete") {
-      setOpenModal(measurementState);
+  const handleMeasure = async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setIsChecking(true);
+    setCheckError(false);
+    try {
+      const result = await withMinimumDuration(() => refetch());
+      if (result.isError || !result.data) throw new Error("progress unavailable");
+      if (result.data.completed) setOpenModal("complete");
+      else if (result.data.completedExercises.length > 0) setOpenModal("resume");
+      else {
+        navigate("/measure");
+        return;
+      }
+    } catch {
+      setCheckError(true);
+    }
+    busyRef.current = false;
+    setIsChecking(false);
+  };
+  const enterMeasurement = (restart: boolean) => {
+    if (busyRef.current) return;
+    if (restart && !progress?.measurementGroupId) {
+      setCheckError(true);
+      setOpenModal(null);
       return;
     }
-
-    navigate("/measure");
+    busyRef.current = true;
+    navigate("/measure", {
+      state: restart ? { restartGroupId: progress?.measurementGroupId } : null,
+    });
   };
 
   return (
@@ -81,11 +106,16 @@ function HomePage() {
       </section>
 
       <MeasureBubble
-        message={BUBBLE_MESSAGE[measurementState]}
+        message={isChecking ? "측정 상태를 확인하고 있어요…" : BUBBLE_MESSAGE[measurementState]}
         onMeasure={handleMeasure}
-        disabled={isStateLoading}
+        disabled={isStateLoading || isChecking}
       />
 
+      {(isError || checkError) && (
+        <p role="alert" className="text-body-small text-center">
+          측정 상태를 확인하지 못했어요. 측정하기를 눌러 다시 확인해 주세요.
+        </p>
+      )}
       {hasTrend && <TrendChart series={trend} />}
 
       <Footer />
@@ -97,11 +127,11 @@ function HomePage() {
           body={"멈춘 곳부터 이어서 할 수도 있고,\n처음부터 천천히 다시 할 수도 있어요."}
           primaryAction={{
             label: "이어서 측정하기",
-            onClick: () => navigate("/measure?resume=true"),
+            onClick: () => enterMeasurement(false),
           }}
           secondaryAction={{
             label: "처음부터 측정하기",
-            onClick: () => navigate("/measure"),
+            onClick: () => enterMeasurement(true),
           }}
           onClose={() => setOpenModal(null)}
         />

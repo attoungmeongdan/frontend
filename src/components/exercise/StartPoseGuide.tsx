@@ -32,16 +32,16 @@ function StartPoseGuide({ exerciseType, isMatching }: StartPoseGuideProps) {
   const guide = GUIDE[exerciseType];
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-4 pt-16 pb-28 landscape:pt-12 landscape:pb-20">
+    <div className="camera-stage-view pointer-events-none relative z-20 flex flex-col items-center gap-2">
       <img
         src={guide.image}
         alt=""
         aria-hidden
-        className={`max-h-[68dvh] w-[min(88vw,44rem)] object-contain opacity-60 drop-shadow-lg transition-[filter] duration-200 landscape:max-h-[76dvh] landscape:w-[min(72vw,52rem)] ${
+        className={`min-h-0 w-full flex-1 object-contain opacity-60 drop-shadow-lg transition-[filter] duration-200 ${
           isMatching ? "brightness-125 saturate-150" : ""
         }`}
       />
-      <div className="absolute inset-x-4 bottom-[max(2.25rem,env(safe-area-inset-bottom))] flex flex-col items-center landscape:bottom-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="flex w-full shrink-0 flex-col items-center">
         <p className="bg-camera-scrim text-body-small rounded-2xl px-4 py-2 text-center font-semibold break-keep text-white">
           {isMatching ? "좋아요! 운동 측정을 시작할게요" : guide.message}
         </p>

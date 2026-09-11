@@ -11,7 +11,7 @@ import { useBodyGuideVoice, useCountVoice, useDurationVoice } from "@/hooks/useE
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import type { PoseLandmarkPayload } from "@/types/exercise";
+import type { PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 function formatElapsedTime(milliseconds: number) {
   const totalSeconds = Math.floor(milliseconds / 1_000);
@@ -45,8 +45,8 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
   });
   const observeStartPose = startPose.observe;
   const handlePoseFrame = useCallback(
-    (landmarks: PoseLandmarkPayload[]) => {
-      observeStartPose(landmarks);
+    (landmarks: PoseLandmarkPayload[], frameSize: PoseFrameSize) => {
+      observeStartPose(landmarks, frameSize);
       sendPoseFrame(landmarks);
     },
     [observeStartPose, sendPoseFrame],
@@ -167,7 +167,7 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
       onCancel={moveHome}
       onEnd={isCameraReady && workout.connectionState === "active" ? workout.complete : undefined}
     >
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && new URLSearchParams(window.location.search).has("debugCamera") && (
         <output className="bg-camera-scrim text-caption absolute right-2 bottom-2 z-20 rounded-sm px-2 py-1 text-white/80">
           camera:{camera.diagnostics.cameraReady ? "ok" : "wait"} · model:
           {camera.diagnostics.modelReady ? "ok" : "wait"} · joints:
