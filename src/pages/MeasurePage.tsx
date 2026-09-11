@@ -8,6 +8,7 @@ import PoseCameraFeed from "@/components/exercise/PoseCameraFeed";
 import StartPoseGuide from "@/components/exercise/StartPoseGuide";
 import Button from "@/components/ui/Button";
 import MascotModal from "@/components/ui/MascotModal";
+import { MEASUREMENT_INTRO_BODY } from "@/constants/measurementOrder";
 import { MEASURE_STEPS } from "@/constants/measure";
 import { useMeasurementFlow } from "@/hooks/useMeasurementFlow";
 import turtleComplete from "@/assets/mascots/turtle-today-complete.png";
@@ -16,7 +17,6 @@ import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import type { ExerciseCameraState, PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
-const INTRO_BODY = "의자 앉았다 일어나기, 팔굽혀펴기,\n윗몸일으키기, 플랭크\n총 4단계로 진행돼요!";
 const formatTime = (ms: number) => {
   const seconds = Math.max(0, Math.ceil(ms / 1000));
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
@@ -202,7 +202,7 @@ function MeasurePage() {
         <MascotModal
           mascot={turtleGuide}
           title="같이 운동 수행 능력을 측정해볼까요?"
-          body={INTRO_BODY}
+          body={MEASUREMENT_INTRO_BODY}
           primaryAction={{
             label: "알겠어요",
             onClick: () => setPhase((current) => (current === "intro" ? "guide" : current)),

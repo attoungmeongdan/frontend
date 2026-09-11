@@ -7,6 +7,7 @@ async function setupMeasurement(page: Page, interrupted = false) {
   await setupCamera(page);
   const requests: { mode: string; exerciseType: string; measurementGroupId?: string }[] = [];
   let resumeCalls = 0;
+  let rejectNextResume = false;
   let id = 100;
   let saved = 0;
   let exercise = "CHAIR_STAND";
@@ -48,7 +49,16 @@ async function setupMeasurement(page: Page, interrupted = false) {
     status = "MEASURING";
     expect(route.request().method()).toBe("POST");
     expect(route.request().postData()).toBeNull();
-    return route.fulfill({ json: { data: response("CHAIR_STAND") } });
+    if (rejectNextResume) {
+      rejectNextResume = false;
+      saved = 1;
+      return route.fulfill({
+        status: 409,
+        json: { code: "FITNESS_409_7", message: "체력측정 운동 순서가 올바르지 않습니다." },
+      });
+    }
+    exercise = order[saved];
+    return route.fulfill({ json: { data: response(exercise) } });
   });
   await page.route("**/api/v1/exercise-sessions/*/result", (route) =>
     route.fulfill({
@@ -71,6 +81,9 @@ async function setupMeasurement(page: Page, interrupted = false) {
     requests,
     connections,
     resumeCalls: () => resumeCalls,
+    rejectStaleResume: () => {
+      rejectNextResume = true;
+    },
     complete: (event = true) => {
       status = "COMPLETED";
       saved++;
@@ -159,4 +172,20 @@ test("an interrupted first exercise resumes on entry and restarts with fresh cre
   expect(fixture.requests).toEqual([]);
   expect(fixture.connections[0]).toContain("/101?ticket=ticket-101");
   expect(fixture.connections[1]).toContain("/102?ticket=ticket-102");
+});
+
+test("order rejection refreshes the guide and starts the backend's next exercise", async ({
+  page,
+}) => {
+  const fixture = await setupMeasurement(page, true);
+  await enter(page);
+  fixture.rejectStaleResume();
+  await setPose(page, "chair-stand");
+  await expect(page.getByRole("dialog")).toContainText("팔굽혀펴기");
+  expect(fixture.connections).toHaveLength(0);
+  await page.getByRole("button", { name: "준비됐어요" }).click();
+  await setPose(page, "push-up");
+  await expect.poll(() => fixture.connections.length).toBe(1);
+  expect(fixture.resumeCalls()).toBe(2);
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });

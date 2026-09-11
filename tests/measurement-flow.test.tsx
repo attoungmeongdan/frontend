@@ -595,3 +595,91 @@ it.each([1, 4])("rejects duplicate progress entries with %i saved exercises", as
   await tick();
   expect(screen.getByRole("alert").textContent).toContain("중복");
 });
+
+async function detectPose(index: number) {
+  act(() => {
+    for (let i = 0; i < 5; i++) camera.frame(pose(index), { width: 1280, height: 720 });
+  });
+  await tick();
+}
+
+it("refreshes the guide and can start again when progress advances before session creation", async () => {
+  group = "existing-group";
+  mount();
+  await tick();
+  fireEvent.click(screen.getByRole("button", { name: "알겠어요" }));
+  fireEvent.click(screen.getByRole("button", { name: "준비됐어요" }));
+  saved = 1;
+  await detectPose(0);
+  expect(api.resumeMeasurementSession).not.toHaveBeenCalled();
+  expect(Socket.sockets).toHaveLength(0);
+  expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
+  await start(1);
+  expect(lastSession.exerciseType).toBe("PUSH_UP");
+  expect(Socket.sockets).toHaveLength(1);
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("shows completion if all exercises were saved before the next creation request", async () => {
+  saved = 3;
+  group = "existing-group";
+  mount();
+  await tick();
+  fireEvent.click(screen.getByRole("button", { name: "준비됐어요" }));
+  saved = 4;
+  await detectPose(3);
+  expect(screen.getByRole("dialog").textContent).toContain("모든 측정을 마쳤어요");
+  expect(api.resumeMeasurementSession).not.toHaveBeenCalled();
+  expect(Socket.sockets).toHaveLength(0);
+});
+
+it.each(["FITNESS_409_7", "FITNESS_409_4", "FITNESS_409_5"])(
+  "resyncs persisted progress after %s without leaving the next guide stuck",
+  async (code) => {
+    group = "existing-group";
+    mount();
+    await tick();
+    vi.mocked(api.resumeMeasurementSession).mockImplementationOnce(async () => {
+      saved = 1;
+      throw {
+        isAxiosError: true,
+        response: {
+          status: 409,
+          data: { code, message: "체력측정 운동 순서가 올바르지 않습니다." },
+        },
+      };
+    });
+    fireEvent.click(screen.getByRole("button", { name: "알겠어요" }));
+    fireEvent.click(screen.getByRole("button", { name: "준비됐어요" }));
+    await detectPose(0);
+    expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
+    expect(Socket.sockets).toHaveLength(0);
+    await start(1);
+    expect(lastSession.exerciseType).toBe("PUSH_UP");
+    expect(Socket.sockets).toHaveLength(1);
+    expect(api.resumeMeasurementSession).toHaveBeenCalledTimes(2);
+  },
+);
+
+it("keeps the error when the server rejects the order but reports no saved progress", async () => {
+  mount();
+  await tick();
+  vi.mocked(api.createWorkoutSession).mockRejectedValueOnce({
+    isAxiosError: true,
+    response: {
+      status: 409,
+      data: { code: "FITNESS_409_7", message: "체력측정 운동 순서가 올바르지 않습니다." },
+    },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "알겠어요" }));
+  fireEvent.click(screen.getByRole("button", { name: "준비됐어요" }));
+  await detectPose(0);
+  expect(screen.getByRole("alert").textContent).toContain("체력측정 운동 순서");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(api.createWorkoutSession).toHaveBeenCalledTimes(1);
+  expect(Socket.sockets).toHaveLength(0);
+  fireEvent.click(screen.getByRole("button", { name: "세션 다시 시작" }));
+  await detectPose(0);
+  expect(lastSession.exerciseType).toBe("CHAIR_STAND");
+  expect(Socket.sockets).toHaveLength(1);
+});

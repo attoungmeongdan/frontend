@@ -9,6 +9,7 @@ import {
   getWorkoutSessionResult,
   resumeMeasurementSession,
 } from "@/apis/exerciseSessions";
+import { POSE_TRANSMISSION_FPS, POSE_TRANSMISSION_INTERVAL_MS } from "@/constants/poseTransmission";
 import type { ExerciseType } from "@/constants/exercises";
 import type {
   ExerciseAnalysisResult,
@@ -38,7 +39,8 @@ interface UseWorkoutSessionOptions {
   onCompleted: (sessionId: number, measurementGroupId?: string | null) => void;
   mode?: "WORKOUT" | "MEASUREMENT";
   measurementGroupId?: string | null;
-  createSession?: () => Promise<ExerciseSessionCreateResponse>;
+  // null means progress changed before creation; return to the refreshed guide.
+  createSession?: () => Promise<ExerciseSessionCreateResponse | null>;
   verifyCompletion?: (result: ExerciseSessionResult) => Promise<void>;
   minimumPendingMs?: number;
 }
@@ -88,7 +90,7 @@ export function useWorkoutSession({
   const socketGenerationRef = useRef(0);
   const sequenceRef = useRef(0);
   const lastTimestampRef = useRef(0);
-  const lastSentAtRef = useRef(0);
+  const nextSendAtRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const shouldResumeRef = useRef(false);
   const measurementTimedOutRef = useRef(false);
@@ -360,7 +362,7 @@ export function useWorkoutSession({
     sessionRef.current = null;
     sequenceRef.current = 0;
     lastTimestampRef.current = 0;
-    lastSentAtRef.current = 0;
+    nextSendAtRef.current = null;
     completedRef.current = false;
     measurementTimedOutRef.current = false;
     setAnalysis(null);
@@ -392,13 +394,17 @@ export function useWorkoutSession({
         minimumPendingMs,
       );
       if (attempt !== attemptRef.current) return;
+      if (!session) {
+        updateConnectionState("idle");
+        return;
+      }
       sessionRef.current = session;
       shouldResumeRef.current = mode === "MEASUREMENT";
       setDiagnostics((current) => ({
         ...current,
         sessionId: session.sessionId,
         webSocketPath: session.webSocketPath,
-        transmissionFps: Math.max(1, session.transmissionFps || 10),
+        transmissionFps: POSE_TRANSMISSION_FPS,
       }));
 
       connectSocket(session, attempt);
@@ -433,12 +439,19 @@ export function useWorkoutSession({
     }
 
     const now = performance.now();
-    const transmissionFps = Math.max(1, session.transmissionFps || 10);
-    if (now - lastSentAtRef.current < 1_000 / transmissionFps || socket.bufferedAmount > 65_536) {
+    const deadline = nextSendAtRef.current ?? now;
+    if (now + 0.001 < deadline || socket.bufferedAmount > 65_536) {
       return;
     }
 
-    lastSentAtRef.current = now;
+    // Keep the schedule anchored: rounding each 66.7ms interval to a 50ms
+    // inference tick would otherwise reduce 15fps to 10fps. Skip missed slots,
+    // and send only this new frame (no timer, backlog or repeated landmarks).
+    const elapsedSlots = Math.max(
+      0,
+      Math.floor((now - deadline + 0.001) / POSE_TRANSMISSION_INTERVAL_MS),
+    );
+    nextSendAtRef.current = deadline + (elapsedSlots + 1) * POSE_TRANSMISSION_INTERVAL_MS;
     const timestamp = Math.max(Date.now(), lastTimestampRef.current + 1);
     const sequence = sequenceRef.current + 1;
     lastTimestampRef.current = timestamp;
