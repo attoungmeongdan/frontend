@@ -1,6 +1,6 @@
-import { Building2, Info, MapPin, X } from "lucide-react";
+import { Building2, MapPin, X } from "lucide-react";
 import SheetStepView from "@/components/common/SheetStepView";
-import { SHEET_CLOSE_LABEL, SHEET_FIELD_LABELS, SHEET_INFO_VALUE } from "@/constants/map";
+import { SHEET_CLOSE_LABEL, SHEET_FIELD_LABELS } from "@/constants/map";
 import { formatDistance } from "@/utils/geo";
 import type { FacilityMarker } from "@/apis/facility";
 
@@ -17,7 +17,6 @@ function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
       value: `${facility.roadNameAddress} (집에서 ${formatDistance(facility.distanceKm)})`,
     },
     { icon: Building2, label: SHEET_FIELD_LABELS.category, value: facility.category },
-    { icon: Info, label: SHEET_FIELD_LABELS.info, value: SHEET_INFO_VALUE },
   ];
 
   return (
