@@ -1,26 +1,21 @@
-import { Footprints, PersonStanding, TriangleAlert, Waves, type LucideIcon } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import turtleGuide from "@/assets/mascots/turtle-guide.png";
 import turtleSad from "@/assets/mascots/turtle-sad.png";
 import Button from "@/components/ui/Button";
 import { RECOMMENDATION_MESSAGES, RECOMMENDATION_TITLE } from "@/constants/mypage";
-import type { Recommendation, RecommendationIcon, RecommendationStatus } from "@/types/mypage";
+import type { AiInsight } from "@/types/exercise";
+import type { RecommendationStatus } from "@/types/mypage";
 
 interface RecommendationSectionProps {
   status: RecommendationStatus;
-  recommendations: Recommendation[];
+  recommendations: AiInsight[];
   onRetry: () => void;
 }
 
 /** 디자인 10_Mypage 기준 노출 개수. 스켈레톤 행 수도 이 값을 따른다 */
 const MAX_RECOMMENDATIONS = 3;
 
-const ICON_MAP: Record<RecommendationIcon, LucideIcon> = {
-  walk: Footprints,
-  swim: Waves,
-  stretch: PersonStanding,
-};
-
-// BMI·연령대·성별로 매칭된 상위 3개를 순서 그대로 노출한다. 매칭이 없으면 비워 둔다.
+// 최신 측정 결과로 만든 AI 추천 3개를 순서 그대로 노출한다. 추천이 없으면 비워 둔다.
 // 순위는 서버 응답 순서를 따르되, 4개 이상 내려와도 rank 가 4 이상으로 찍히지 않도록 3개에서 자른다
 function RecommendationSection({ status, recommendations, onRetry }: RecommendationSectionProps) {
   return (
@@ -38,8 +33,9 @@ function RecommendationSection({ status, recommendations, onRetry }: Recommendat
         ) : (
           <ol className="flex flex-col gap-3">
             {recommendations.slice(0, MAX_RECOMMENDATIONS).map((recommendation, index) => (
+              // 응답에 id 가 없다. 운동명이 겹칠 수 있어 순위를 키에 함께 쓴다
               <RecommendationRow
-                key={recommendation.id}
+                key={`${index}-${recommendation.exerciseName}`}
                 rank={index + 1}
                 recommendation={recommendation}
               />
@@ -50,23 +46,21 @@ function RecommendationSection({ status, recommendations, onRetry }: Recommendat
   );
 }
 
-function RecommendationRow({
-  rank,
-  recommendation,
-}: {
-  rank: number;
-  recommendation: Recommendation;
-}) {
-  const Icon = ICON_MAP[recommendation.icon];
-
+function RecommendationRow({ rank, recommendation }: { rank: number; recommendation: AiInsight }) {
   return (
     <li className="border-border-default bg-surface-default flex items-center gap-3 rounded-2xl border p-4">
       <span className="bg-surface-subtle text-brand-teal-strong text-card-label flex size-7 shrink-0 items-center justify-center rounded-full font-bold">
         {rank}
       </span>
-      <Icon size={28} className="text-brand-teal shrink-0" aria-hidden />
+      {/* 시안의 28px 아이콘 자리. 서버가 이모지를 정해 주므로 그대로 그린다 */}
+      <span
+        aria-hidden
+        className="flex size-7 shrink-0 items-center justify-center text-[22px] leading-none"
+      >
+        {recommendation.emoji}
+      </span>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-text-primary text-body font-semibold">{recommendation.name}</p>
+        <p className="text-text-primary text-body font-semibold">{recommendation.exerciseName}</p>
         <p className="text-text-secondary text-note-title font-normal">
           {recommendation.description}
         </p>

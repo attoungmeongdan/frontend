@@ -13,14 +13,3 @@ export interface PersonalInfoItem {
   /** 수정 가능한 항목만 값이 있다 */
   field: EditableField | null;
 }
-
-/** 추천 운동에 쓰는 아이콘 종류 */
-export type RecommendationIcon = "walk" | "swim" | "stretch";
-
-/** BMI·연령대·성별로 매칭된 추천 운동 */
-export interface Recommendation {
-  id: string;
-  name: string;
-  description: string;
-  icon: RecommendationIcon;
-}
