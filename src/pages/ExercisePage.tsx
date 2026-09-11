@@ -1,13 +1,16 @@
-import { useCallback } from "react";
-import { LoaderCircle, Play, RefreshCw } from "lucide-react";
+import { useCallback, useEffect } from "react";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import CameraStage, { type CameraWarning } from "@/components/exercise/CameraStage";
 import CameraStatusScreen from "@/components/exercise/CameraStatusScreen";
 import PoseCameraFeed from "@/components/exercise/PoseCameraFeed";
+import StartPoseGuide from "@/components/exercise/StartPoseGuide";
 import Button from "@/components/ui/Button";
 import { EXERCISES, type Exercise, type ExerciseType } from "@/constants/exercises";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
+import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import type { PoseLandmarkPayload } from "@/types/exercise";
 
 function formatElapsedTime(milliseconds: number) {
   const totalSeconds = Math.floor(milliseconds / 1_000);
@@ -29,7 +32,32 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
     exerciseType: exercise.type,
     onCompleted: handleCompleted,
   });
-  const camera = usePoseCamera({ onPoseFrame: workout.sendPoseFrame });
+  const startWorkout = workout.start;
+  const sendPoseFrame = workout.sendPoseFrame;
+  const handleStartPoseDetected = useCallback(() => {
+    void startWorkout();
+  }, [startWorkout]);
+  const startPose = useStartPoseDetection({
+    exerciseType: exercise.type,
+    enabled: workout.connectionState === "idle",
+    onDetected: handleStartPoseDetected,
+  });
+  const observeStartPose = startPose.observe;
+  const handlePoseFrame = useCallback(
+    (landmarks: PoseLandmarkPayload[]) => {
+      observeStartPose(landmarks);
+      sendPoseFrame(landmarks);
+    },
+    [observeStartPose, sendPoseFrame],
+  );
+  const camera = usePoseCamera({ onPoseFrame: handlePoseFrame });
+  const startCamera = camera.start;
+  const stopCamera = camera.stop;
+
+  useEffect(() => {
+    void startCamera();
+    return stopCamera;
+  }, [startCamera, stopCamera]);
 
   const moveHome = () => {
     workout.cancel();
@@ -44,13 +72,15 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
     (feedback) => feedback.severity === "WARNING" || feedback.severity === "ERROR",
   );
   const warning: CameraWarning | undefined =
-    camera.state === "no-body"
-      ? "no-body"
-      : serverFeedback || workout.connectionError
-        ? "bad-pose"
-        : undefined;
+    workout.connectionState !== "active"
+      ? undefined
+      : camera.state === "no-body"
+        ? "no-body"
+        : serverFeedback || workout.connectionError
+          ? "bad-pose"
+          : undefined;
   const displayValue =
-    camera.state === "no-body"
+    workout.connectionState === "idle" || camera.state === "no-body"
       ? "—"
       : exercise.type === "plank"
         ? formatElapsedTime(workout.analysis?.validDurationMs ?? 0)
@@ -64,13 +94,7 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
       </div>
     );
   } else if (workout.connectionState === "idle") {
-    overlay = (
-      <div className="absolute inset-x-0 bottom-[max(2.25rem,env(safe-area-inset-bottom))] z-30 flex justify-center landscape:bottom-[max(1.25rem,env(safe-area-inset-bottom))]">
-        <Button type="button" onClick={workout.start} leadingIcon={Play} className="w-60">
-          운동 판정 시작
-        </Button>
-      </div>
-    );
+    overlay = <StartPoseGuide exerciseType={exercise.type} isMatching={startPose.isMatching} />;
   } else if (workout.connectionState === "connecting") {
     overlay = (
       <div className="bg-camera-overlay absolute inset-0 z-30 flex items-center justify-center px-6">
@@ -137,8 +161,8 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
           camera:{camera.diagnostics.cameraReady ? "ok" : "wait"} · model:
           {camera.diagnostics.modelReady ? "ok" : "wait"} · joints:
           {camera.diagnostics.landmarkCount} · infer:{camera.diagnostics.inferenceFps}fps · ws:
-          {workout.connectionState} · send:{workout.diagnostics.sentFrames}/
-          {workout.diagnostics.transmissionFps}fps · recv:
+          {workout.connectionState} · phase:{workout.analysis?.phase ?? "-"} · send:
+          {workout.diagnostics.sentFrames}/{workout.diagnostics.transmissionFps}fps · recv:
           {workout.diagnostics.lastReceivedAt
             ? new Date(workout.diagnostics.lastReceivedAt).toLocaleTimeString()
             : "-"}
