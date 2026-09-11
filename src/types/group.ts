@@ -2,19 +2,20 @@ import type { ExerciseType } from "@/constants/exercises";
 
 export type GroupTab = "today" | "month";
 
-export type GroupStatus = "loading" | "error" | "empty" | "success";
-
 export interface GroupMember {
   id: number;
   name: string;
   initial: string;
-  monthlyPercent: number;
+  isOwner: boolean;
 }
 
 export interface Group {
   id: number;
   name: string;
-  inviteCode: string;
+  penalty: string;
+  maxMemberCount: number;
+  currentMemberCount: number;
+  ownerId: number;
   isOwner: boolean;
   members: GroupMember[];
 }
