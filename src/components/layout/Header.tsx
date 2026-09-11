@@ -1,5 +1,6 @@
 import { ArrowLeft, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import ggubukLogo from "@/assets/logo/fittle-logo-ggubuk.png";
 import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
 
@@ -7,7 +8,14 @@ type HeaderProps = HeaderConfig & {
   onBack?: () => void;
 };
 
-function Header({ title, showBack = false, showClose = false, backTo, onBack }: HeaderProps) {
+function Header({
+  title,
+  showBack = false,
+  showClose = false,
+  showProfile = false,
+  backTo,
+  onBack,
+}: HeaderProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -48,7 +56,7 @@ function Header({ title, showBack = false, showClose = false, backTo, onBack }: 
         )}
 
         <div className="flex size-11 items-center justify-center">
-          {showClose && (
+          {showClose ? (
             <button
               type="button"
               aria-label="닫고 홈으로 돌아가기"
@@ -57,6 +65,25 @@ function Header({ title, showBack = false, showClose = false, backTo, onBack }: 
             >
               <X size={24} aria-hidden />
             </button>
+          ) : (
+            showProfile && (
+              <NavLink
+                to="/mypage"
+                aria-label="마이페이지"
+                className="flex size-11 items-center justify-center"
+              >
+                {({ isActive }) => (
+                  // 꾸북이를 원형 뱃지로 감싼다. 현재 위치일 때만 테두리를 브랜드 색으로 올린다
+                  <span
+                    className={`bg-surface-subtle flex size-9 items-center justify-center overflow-hidden rounded-full ring-1 ${
+                      isActive ? "ring-brand-teal" : "ring-border-default"
+                    }`}
+                  >
+                    <img src={ggubukLogo} alt="" aria-hidden className="size-7 object-contain" />
+                  </span>
+                )}
+              </NavLink>
+            )
           )}
         </div>
       </div>
