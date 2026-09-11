@@ -12,7 +12,6 @@ export interface GroupMember {
 export interface Group {
   id: number;
   name: string;
-  penalty: string;
   maxMemberCount: number;
   currentMemberCount: number;
   ownerId: number;
