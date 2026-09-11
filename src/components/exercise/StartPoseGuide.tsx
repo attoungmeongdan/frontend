@@ -43,9 +43,9 @@ const POSE: Record<ExerciseType, ReactNode> = {
 
 function StartPoseGuide({ exerciseType, isMatching }: StartPoseGuideProps) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center px-5 pt-20 pb-24">
+    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center px-5 pt-20 pb-24 landscape:flex-row landscape:gap-4 landscape:px-18 landscape:py-10">
       <div
-        className={`w-full max-w-xl rounded-3xl border-2 border-dashed p-3 transition-colors duration-200 ${
+        className={`w-full max-w-xl rounded-3xl border-2 border-dashed p-3 transition-colors duration-200 landscape:max-w-[min(58vw,40rem)] landscape:p-2 ${
           isMatching
             ? "border-brand-teal bg-brand-teal/20 text-white"
             : "border-white/65 bg-black/15 text-white/75"
@@ -53,7 +53,7 @@ function StartPoseGuide({ exerciseType, isMatching }: StartPoseGuideProps) {
       >
         <svg
           viewBox="0 0 400 250"
-          className="max-h-[52dvh] w-full"
+          className="max-h-[52dvh] w-full landscape:max-h-[70dvh]"
           fill="none"
           stroke="currentColor"
           strokeWidth="13"
@@ -64,14 +64,16 @@ function StartPoseGuide({ exerciseType, isMatching }: StartPoseGuideProps) {
           {POSE[exerciseType]}
         </svg>
       </div>
-      <p className="bg-camera-scrim text-body mt-3 rounded-full px-5 py-2 text-center font-semibold">
-        {isMatching ? "좋아요! 운동 판정을 시작할게요" : GUIDE_MESSAGE[exerciseType]}
-      </p>
-      {!isMatching && (
-        <p className="text-body-small mt-2 text-center text-white/80">
-          안내선에 맞춰 자세를 유지하면 자동으로 시작돼요
+      <div className="flex flex-col items-center landscape:w-56 landscape:shrink-0">
+        <p className="bg-camera-scrim text-body mt-3 rounded-full px-5 py-2 text-center font-semibold break-keep landscape:mt-0 landscape:rounded-2xl">
+          {isMatching ? "좋아요! 운동 판정을 시작할게요" : GUIDE_MESSAGE[exerciseType]}
         </p>
-      )}
+        {!isMatching && (
+          <p className="text-body-small mt-2 text-center text-white/80 landscape:text-sm">
+            안내선에 맞춰 자세를 유지하면 자동으로 시작돼요
+          </p>
+        )}
+      </div>
     </div>
   );
 }
