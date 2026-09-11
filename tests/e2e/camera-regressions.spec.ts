@@ -77,8 +77,8 @@ test("measurement keeps the chair guide and restores the ordinary header after e
   await page.goto("/measure");
   await page.getByRole("button", { name: "알겠어요" }).click();
   await page.getByRole("button", { name: "준비됐어요" }).click();
-  await expect(page.getByText("의자 앞에 서서 기다려 주세요")).toBeVisible();
-  await expect(page.getByText(/스쿼트/)).toHaveCount(0);
+  await expect(page.getByText("카메라를 향해 서서 기다려 주세요")).toBeVisible();
+  await expect(page.getByText(/스쿼트/)).toBeVisible();
   await expect(page.locator(".camera-stage")).toHaveCSS("height", "852px");
   await expect(page.locator("video")).toHaveCSS("object-fit", "cover");
   await page.getByRole("button", { name: "운동을 취소하고 홈으로 돌아가기" }).click();

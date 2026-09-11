@@ -7,8 +7,8 @@ import type { ExerciseType } from "@/constants/exercises";
 
 type ExerciseContent = { name: string; image: string; startMessage: string };
 
-// The backend still calls both variants CHAIR_STAND. Keep presentation separate
-// from the API identifier: WORKOUT uses squat, MEASUREMENT uses the chair test.
+// The backend still calls squat CHAIR_STAND. Keep the presentation name separate
+// from the API identifier.
 export const EXERCISE_CONTENT = {
   squat: {
     name: "스쿼트",
@@ -16,9 +16,9 @@ export const EXERCISE_CONTENT = {
     startMessage: "카메라를 향해 서서 기다려 주세요",
   },
   "chair-stand": {
-    name: "의자 앉았다 일어나기",
+    name: "스쿼트",
     image: chairGuide,
-    startMessage: "의자 앞에 서서 기다려 주세요",
+    startMessage: "카메라를 향해 서서 기다려 주세요",
   },
   "push-up": {
     name: "팔굽혀펴기",

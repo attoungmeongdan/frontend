@@ -209,12 +209,12 @@ describe("measurement page with shared session + start-pose hooks", () => {
     expect(screen.getByRole("dialog").textContent).toContain("같이 운동");
     expect(api.createWorkoutSession).not.toHaveBeenCalled();
     const expectedApi = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"];
-    const expectedNames = ["의자 앉았다 일어나기", "팔굽혀펴기", "윗몸일으키기", "플랭크"];
+    const expectedNames = ["스쿼트", "팔굽혀펴기", "윗몸일으키기", "플랭크"];
     expect(MEASUREMENT_ORDER).toEqual(expectedApi);
     expect(MEASURE_STEPS.map((step) => step.name)).toEqual(expectedNames);
     expect(MEASUREMENT_RESULT_EXERCISES.map((step) => step.name)).toEqual(expectedNames);
     expect(screen.getByRole("dialog").textContent).toContain(
-      "의자 앉았다 일어나기, 팔굽혀펴기,\n윗몸일으키기, 플랭크",
+      "스쿼트, 팔굽혀펴기,\n윗몸일으키기, 플랭크",
     );
     for (let index = 0; index < 4; index++) {
       if (index > 0) expect(screen.getByRole("dialog").textContent).toContain(expectedNames[index]);

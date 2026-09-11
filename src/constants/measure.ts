@@ -14,14 +14,14 @@ const STEP_DETAILS: Record<ExerciseType, Omit<MeasureStep, "exercise">> = {
     flow: "timed",
     valueKind: "count",
     mascot: turtleChairStand,
-    readyBody: "의자를 준비해 주세요.\n준비되시면 천천히 시작해 볼까요?",
+    readyBody: "스쿼트를 진행해주세요!",
   },
   "push-up": {
     name: "팔굽혀펴기",
     flow: "timed",
     valueKind: "count",
     mascot: turtlePushUp,
-    readyBody: "이번에는 팔굽혀펴기예요.\n의자를 치우고 잠시 숨을 골라 주세요.",
+    readyBody: "이번에는 팔굽혀펴기예요.\n잠시 숨을 골라 주세요.",
   },
   "sit-up": {
     name: "윗몸일으키기",

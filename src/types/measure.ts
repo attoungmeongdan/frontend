@@ -5,7 +5,7 @@ import type { ExerciseType } from "@/constants/exercises";
  * - intro: 새로 시작할 때 1단계 전에 띄우는 전체 안내 모달
  * - ready: 단계 준비 모달
  * - pose-waiting: 자세 인식 대기. 자세가 인식되면 타이머가 자동으로 시작된다
- * - measuring: 의자 30초·윗몸/팔굽 60초 측정, 플랭크 유지 시간 측정
+ * - measuring: 스쿼트 30초·윗몸/팔굽 60초 측정, 플랭크 유지 시간 측정
  * - saving / save-error: 종목 기록 저장 중·실패
  * - complete: 4단계 완료 모달
  */
