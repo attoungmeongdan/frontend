@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getRecentSevenDays, type RecentExerciseStatus } from "@/apis/calendar";
 import { getMeasurementHistory, getMeasurementProgress } from "@/apis/exercise";
 import type { StreakDay } from "@/components/home/StreakCard";
-import type { TrendPoint, TrendSeries } from "@/components/home/TrendChart";
+import type { TrendSeries } from "@/components/home/TrendChart";
 import { EXERCISES } from "@/constants/exercises";
 import type { MeasurementHistory, MeasurementProgress, MeasurementRecord } from "@/types/exercise";
 import { getRecentSeoulDays } from "@/utils/date";
@@ -70,25 +70,20 @@ function formatPointDate(measuredAt: string) {
 }
 
 function toTrendSeries(history?: MeasurementHistory): TrendSeries {
-  const records: MeasurementRecord[] = [
-    ...(history?.previousMeasurements ?? []),
-    ...(history?.today ? [history.today] : []),
-  ].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
-
   const series = {} as TrendSeries;
 
   for (const exercise of EXERCISES) {
-    const points: TrendPoint[] = [];
+    const measured = history?.[exercise.historyKey];
 
-    for (const record of records) {
-      const measured = record.exercises[exercise.apiType];
+    const records: MeasurementRecord[] = [
+      ...(measured?.previousMeasurements ?? []),
+      ...(measured?.today ? [measured.today] : []),
+    ].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
 
-      if (measured) {
-        points.push({ date: formatPointDate(record.measuredAt), value: measured.value });
-      }
-    }
-
-    series[exercise.type] = points;
+    series[exercise.type] = records.map((record) => ({
+      date: formatPointDate(record.measuredAt),
+      value: record.value,
+    }));
   }
 
   return series;
