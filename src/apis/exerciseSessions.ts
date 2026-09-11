@@ -1,5 +1,4 @@
 import { axiosInstance } from "@/apis/axiosInstance";
-import { API_BASE_URL } from "@/config/env";
 import type { ExerciseType } from "@/constants/exercises";
 import type {
   ExerciseApiType,
@@ -65,6 +64,8 @@ export async function getWorkoutSessionResult(sessionId: number) {
 
   return response.data.data;
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export function createExerciseWebSocketUrl(webSocketPath: string, socketTicket: string) {
   const url = new URL(webSocketPath, `${API_BASE_URL}/`);
