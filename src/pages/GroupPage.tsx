@@ -61,7 +61,8 @@ function GroupPage() {
   const groups = groupsQuery.data;
 
   const [currentGroupId, setCurrentGroupId] = useState<number | null>(null);
-  const [tab, setTab] = useState<GroupTab>("month");
+  // 들어오면 오늘 기록부터 본다
+  const [tab, setTab] = useState<GroupTab>("today");
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
@@ -127,7 +128,7 @@ function GroupPage() {
   const openGroup = (groupId: number) => {
     setCurrentGroupId(groupId);
     setSelectedMemberId(null);
-    setTab("month");
+    setTab("today");
     closeSheet();
   };
 
@@ -141,7 +142,7 @@ function GroupPage() {
       onSuccess: (created) => {
         setCurrentGroupId(created.id);
         setSelectedMemberId(null);
-        setTab("month");
+        setTab("today");
         closeSheet();
         toast.show(GROUP_TOAST.created(created.name));
       },
