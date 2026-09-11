@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import { ClipboardX, LoaderCircle, TriangleAlert } from "lucide-react";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import turtleCheer from "@/assets/mascots/turtle-cheer.png";
+import turtleCheer from "@/assets/mascots/turtle-cheer.webp";
 import ExerciseResultCard from "@/components/result/ExerciseResultCard";
 import Button from "@/components/ui/Button";
 import MascotSpeech from "@/components/ui/MascotSpeech";

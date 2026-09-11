@@ -1,4 +1,4 @@
-import logo from "@/assets/logo/fittle-logo-ggubuk.png";
+import logo from "@/assets/logo/fittle-logo-ggubuk.webp";
 
 function BootSplash({ label = "불러오는 중" }: { label?: string }) {
   return (

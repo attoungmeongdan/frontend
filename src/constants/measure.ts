@@ -1,7 +1,7 @@
-import turtleChairStand from "@/assets/mascots/turtle-exercise-chair-stand.png";
-import turtlePlank from "@/assets/mascots/turtle-exercise-plank.png";
-import turtlePushUp from "@/assets/mascots/turtle-exercise-push-up.png";
-import turtleSitUp from "@/assets/mascots/turtle-exercise-sit-up.png";
+import turtleChairStand from "@/assets/mascots/turtle-exercise-chair-stand.webp";
+import turtlePlank from "@/assets/mascots/turtle-exercise-plank.webp";
+import turtlePushUp from "@/assets/mascots/turtle-exercise-push-up.webp";
+import turtleSitUp from "@/assets/mascots/turtle-exercise-sit-up.webp";
 import type { MeasureStep } from "@/types/measure";
 
 // 체력 측정 4단계. 순서가 곧 진행 순서다

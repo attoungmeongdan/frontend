@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import turtleGuide from "@/assets/mascots/turtle-guide.png";
+import turtleGuide from "@/assets/mascots/turtle-guide.webp";
 import AnalysisLoading from "@/components/analysis/AnalysisLoading";
 import AnalysisStatusMessage from "@/components/analysis/AnalysisStatusMessage";
 import DistributionUnavailable from "@/components/analysis/DistributionUnavailable";
