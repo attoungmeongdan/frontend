@@ -13,8 +13,8 @@ import {
   useWeeklyStreak,
   type MeasurementState,
 } from "@/hooks/useHomeData";
-import turtleResumeChoice from "@/assets/mascots/turtle-resume-choice.webp";
-import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.webp";
+import turtleResumeChoice from "@/assets/mascots/turtle-resume-choice.png";
+import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
 const BUBBLE_MESSAGE: Record<MeasurementState, string> = {
   new: "꾸북이와 같이 \n운동 능력 측정해볼까요?",

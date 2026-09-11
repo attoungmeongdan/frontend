@@ -1,6 +1,6 @@
 import { LogOut, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
-import turtleSad from "@/assets/mascots/turtle-sad.webp";
+import turtleSad from "@/assets/mascots/turtle-sad.png";
 import PersonalInfoList from "@/components/mypage/PersonalInfoList";
 import ProfileError from "@/components/mypage/ProfileError";
 import ProfileSkeleton from "@/components/mypage/ProfileSkeleton";

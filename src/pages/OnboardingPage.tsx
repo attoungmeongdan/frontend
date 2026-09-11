@@ -19,8 +19,8 @@ import {
 } from "@/hooks/useKakaoPostcode";
 import { setAccessToken } from "@/apis/tokenStore";
 import { useAuth } from "@/hooks/useAuth";
-import turtleCheer from "@/assets/mascots/turtle-cheer.webp";
-import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.webp";
+import turtleCheer from "@/assets/mascots/turtle-cheer.png";
+import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
 type Gender = "female" | "male";
 type AddressStatus = "idle" | "done" | "fail";
