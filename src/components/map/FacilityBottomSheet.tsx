@@ -1,13 +1,21 @@
 import { useEffect } from "react";
 import { motion } from "motion/react";
 import { Building2, House, MapPin, X } from "lucide-react";
+import MascotSpeech from "@/components/common/MascotSpeech";
 import SheetStepView from "@/components/common/SheetStepView";
-import { SHEET_CLOSE_LABEL, SHEET_DISTANCE_PREFIX, SHEET_FIELD_LABELS } from "@/constants/map";
+import {
+  RECOMMEND_MESSAGE,
+  SHEET_CLOSE_LABEL,
+  SHEET_DISTANCE_PREFIX,
+  SHEET_FIELD_LABELS,
+} from "@/constants/map";
 import { formatDistance } from "@/utils/geo";
 import type { FacilityMarker } from "@/apis/facility";
 
 interface FacilityBottomSheetProps {
   facility: FacilityMarker;
+  /** 진입 시 랜덤으로 고른 시설이면 꾸북이 추천 말풍선을 위에 얹는다 */
+  isRecommended?: boolean;
   onClose: () => void;
 }
 
@@ -15,7 +23,11 @@ interface FacilityBottomSheetProps {
 const SHEET_TRANSITION = { type: "spring", stiffness: 400, damping: 40, mass: 0.8 } as const;
 
 // Feature/FacilitySheet (W9YtV) — 공공데이터 제공 항목만 표시한다
-function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
+function FacilityBottomSheet({
+  facility,
+  isRecommended = false,
+  onClose,
+}: FacilityBottomSheetProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -66,7 +78,7 @@ function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
           </p>
         </div>
 
-        <dl className="flex flex-col gap-3 px-5 pt-2 pb-6">
+        <dl className={`flex flex-col gap-3 px-5 pt-4 ${isRecommended ? "pb-4" : "pb-6"}`}>
           {fields.map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex gap-2.5">
               <Icon size={20} className="text-brand-teal-strong shrink-0" aria-hidden />
@@ -77,6 +89,12 @@ function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
             </div>
           ))}
         </dl>
+
+        {isRecommended && (
+          <div className="px-5 pb-6">
+            <MascotSpeech message={RECOMMEND_MESSAGE} />
+          </div>
+        )}
       </SheetStepView>
     </motion.section>
   );
