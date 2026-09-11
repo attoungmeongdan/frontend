@@ -446,6 +446,7 @@ export function useWorkoutSession({
         : retryAction === "socket"
           ? "WebSocket 다시 연결"
           : "저장 다시 시도",
+    shouldReacquireStartPose: retryAction === "start",
     diagnostics,
     socketTicketLength: sessionRef.current?.socketTicket?.length ?? 0,
     start,

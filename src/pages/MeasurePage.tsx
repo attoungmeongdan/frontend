@@ -75,11 +75,13 @@ function MeasurePage() {
   const stopCamera = camera.stop;
   const cameraReady =
     camera.state === "normal" || camera.state === "no-body" || camera.state === "bad-pose";
+  const shouldStartCamera = phase !== "loading";
 
   useEffect(() => {
+    if (!shouldStartCamera) return;
     void startCamera();
     return stopCamera;
-  }, [startCamera, stopCamera]);
+  }, [shouldStartCamera, startCamera, stopCamera]);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +110,10 @@ function MeasurePage() {
     session.cancel();
     camera.stop();
     navigate("/");
+  };
+  const retrySession = () => {
+    if (session.shouldReacquireStartPose) setPhase("ready");
+    session.retry();
   };
   if (phase === "loading" || !step)
     return (
@@ -162,7 +168,7 @@ function MeasurePage() {
       <div className="bg-camera-overlay absolute inset-0 z-30 flex items-center justify-center px-6">
         <div className="rounded-card flex max-w-84 flex-col gap-4 bg-white p-5 text-center">
           <p role="alert">{session.connectionError}</p>
-          <Button type="button" onClick={session.retry} leadingIcon={RefreshCw}>
+          <Button type="button" onClick={retrySession} leadingIcon={RefreshCw}>
             {session.retryLabel}
           </Button>
         </div>
