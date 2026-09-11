@@ -41,3 +41,17 @@ export interface MeasurementHistory {
   today: MeasurementRecord | null;
   previousMeasurements: MeasurementRecord[];
 }
+
+/** 측정 결과 기반 AI 추천 운동 한 건. 서버가 이모지까지 정해서 준다 */
+export interface AiInsight {
+  emoji: string;
+  exerciseName: string;
+  description: string;
+}
+
+/** 측정 그룹에 저장된 맞춤 추천. 그룹당 한 번 생성되며 insights 는 3개다 */
+export interface MeasurementInsight {
+  measurementGroupId: string;
+  insights: AiInsight[];
+  generatedAt: string;
+}
