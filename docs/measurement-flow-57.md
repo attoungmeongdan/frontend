@@ -11,7 +11,7 @@
 
 `useMeasurementFlow`가 전체 안내 → 종목 안내 → 시작 자세 대기 → 측정 → 종목 안내/최종 완료 상태를 관리한다. 저장 중/저장 오류는 공통 `useWorkoutSession`의 상태를 재사용한다.
 
-- `MEASURE_STEPS`의 의자 → 윗몸 → 팔굽 → 플랭크 순서 및 기존 mascot/readyBody, `MascotModal`, `CameraStage` 재사용.
+- `MEASURE_STEPS`의 의자 → 팔굽 → 윗몸 → 플랭크 순서 및 기존 mascot/readyBody, `MascotModal`, `CameraStage` 재사용.
 - 카메라, MediaPipe full 모델, 시작 자세 3프레임 감지, 관절 송신은 기존 공통 훅을 사용한다. 프론트에는 횟수/유효 시간 판정기를 추가하지 않았다.
 - 진행 조회와 저장 확인 오류를 신규 측정으로 바꾸지 않는다. 완료된 종목 집합과 서버의 다음 종목이 목표 순서에 맞는지 검증한다.
 - 저장된 종목이 0개면 그룹이 존재해도 전체 안내부터 시작한다. 1/2/3개면 다음 종목 안내부터 복원한다.
@@ -24,15 +24,15 @@
 - 홈 임시 `?state` override 제거. 버튼 클릭 시 서버를 다시 조회해 신규/재개/오늘 완료를 결정한다. 재시작·종목 저장 후 측정 진행 캐시를 갱신한다.
 - WORKOUT 생성 요청에는 measurementGroupId를 넣지 않는다. WORKOUT 완료·취소는 측정 진행/이력 캐시를 변경하지 않는다.
 
-## 백엔드 계약상 블로커
+## 종목 순서
 
-### 1. 목표 순서와 서버 순서 불일치
+[MeasurementSequence](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/MeasurementSequence.java)의 CHAIR_STAND → PUSH_UP → SIT_UP → PLANK를 따른다. 전체 설명, 종목별 안내와 mascot, 의자 정리 문구, 웹캠의 시작 자세·단계명, API 검증 순서, 재개 위치, 분석 결과 카드 순서를 모두 맞췄다.
 
-[MeasurementSequence](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/MeasurementSequence.java)의 순서는 CHAIR_STAND → PUSH_UP → SIT_UP → PLANK다. `ExerciseSessionService.resolveMeasurementGroupId`가 이 순서를 강제하며 위반 시 FITNESS_409_7을 반환한다.
+의자 저장 후 팔굽 안내, 의자·팔굽 저장 후 윗몸 안내, 세 종목 저장 후 플랭크 안내로 복원한다. 전체 플로우 테스트가 안내·카메라·API·분석 카드의 순서 일치를 확인한다. 종목 순서로 인한 기존 블로커는 해소됐다.
 
-#57은 CHAIR_STAND → SIT_UP → PUSH_UP → PLANK를 요구한다. 이 PR은 요청한 순서를 바꾸거나 서버를 속여 다른 운동 좌표를 전송하지 않는다. 현재 백엔드에서는 의자 저장 후 순서 오류를 안내하며, 목표 순서 전체 완료는 백엔드 순서 변경/배포가 필요하다. 배포 OpenAPI에는 실제 ORDER 값이 없어 배포 서비스의 순서는 인증 후 별도 확인이 필요하다.
+## 남은 백엔드 계약상 제약 및 미검증 사항
 
-### 2. 초기화와 첫 세션 생성이 결합됨
+### 1. 초기화와 첫 세션 생성이 결합됨
 
 [MeasurementFlowService.resume/restart](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/MeasurementFlowService.java)는 모두 `ExerciseSessionService.create`를 호출한다. restart는 기존 종목을 soft-delete하고 새 그룹/의자 세션/티켓까지 생성한다. 그룹만 초기화하는 API는 없다.
 
@@ -40,11 +40,11 @@
 
 **한계:** 재시작을 선택한 직후 1·2단계에서 나가면 서버의 이전 저장 기록이 아직 남는다. “선택 즉시 초기화”와 “자세 확인 전 세션 생성 금지”를 동시에 충족하려면 초기화 전용 API 또는 지연 세션 생성 계약이 필요하다. `restart` 자체에는 완료된 그룹 거부 검사도 없으므로 서버에서 트랜잭션 내 일일 완료 검사도 추가해야 한다. 프론트는 POST 직전 progress.completed를 확인한다.
 
-### 3. 자유 운동과 측정 런타임 정리의 서버 결합
+### 2. 자유 운동과 측정 런타임 정리의 서버 결합
 
 [ExerciseSessionService.create](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/ExerciseSessionService.java)는 모드와 관계없이 사용자의 CREATED/MEASURING 세션 전체를 정리한다. 남아 있는 측정 런타임의 제한시간이 경과했다면 WORKOUT 생성 요청에서도 측정 세션을 COMPLETED로 저장할 수 있다. 프론트의 측정 API/캐시 분리만으로 서버 측 불변성까지 보장할 수 없다. 모드별 정리 정책과 취소 계약을 백엔드에서 보완해야 한다.
 
-### 4. 통신 중단/응답 유실의 한계
+### 3. 통신 중단/응답 유실의 한계
 
 [WebSocket handler](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/global/websocket/ExercisePoseWebSocketHandler.java)는 정상 close(1000)에는 만료 처리를 하지 않는다. 클라이언트 취소 시 4000으로 닫아 열린 세션을 EXPIRED로 정리하도록 했다. 완료 이벤트는 서버 트랜잭션 커밋 이후 전송되므로 완료 후 닫기에서 저장 결과를 되돌리지 않는다.
 
@@ -54,19 +54,19 @@ REST 성공 응답이 유실되거나 소켓 연결 전에 탭이 닫힌 경우�
 
 자동 검증은 `npm test`의 API/WebSocket/카메라 입력을 대체한 회귀 테스트다. 실제 MediaPipe/사용자 신체 동작이나 배포 서버 저장 성공을 의미하지 않는다.
 
-| 시나리오                     | 확인 결과                                                                                       |
-| ---------------------------- | ----------------------------------------------------------------------------------------------- |
-| 신규 1→11 전체 완료          | 목표 순서 mock 계약에서 확인, 실서버는 순서 블로커                                              |
-| 3단계 이탈 → 신규 1단계      | 저장 0개 그룹/이탈/재마운트 확인                                                                |
-| 5/7/9단계 이탈 → 4/6/8단계   | 각 상태 진입·이탈·재마운트 확인                                                                 |
-| 각 재개 상태에서 처음부터    | 자세 감지 전 POST 없음, 감지 후 restart 1회 및 다음 종목 resume 확인; 선택 즉시 초기화는 블로커 |
-| 새로고침/뒤로가기/홈 재진입  | 메모리 라우터 재마운트·서버 재조회 및 완료 단계 뒤로가기 차단 확인                              |
-| 자유 운동 시작/완료/취소     | 프론트 측정 캐시/진행 조회/재개/재시작 호출 불변 확인; 서버 정리 정책은 블로커                  |
-| 빠른/느린 로딩               | 20/500/1300ms 요청, 실패, 1200ms 저장 확인. 500ms 최소 및 느린 요청 추가 지연 없음              |
-| 중복 이벤트/클릭, StrictMode | 세션 1회 생성·종목 저장 확인 1회·언마운트 후 늦은 응답 무시                                     |
-| 서버 시간/플랭크             | remainingTimeMs 표시, 로컬 90/180초 경과만으로 완료되지 않음, 서버 완료 이벤트 후 이동          |
-| 세로/가로                    | 테스트 데이터 브라우저: 390×844, 844×390, 667×375에서 안내·카메라 픽토그램·완료 모달 확인       |
-| 최종 완료 → 분석             | 비활성 뒤로가기, 모달 닫기 없음, 분석 경로 replace 이동 확인                                    |
+| 시나리오                     | 확인 결과                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 신규 1→11 전체 완료          | 백엔드 순서 mock 계약에서 확인; 인증된 실서버 전체 수행 미검증                                          |
+| 3단계 이탈 → 신규 1단계      | 저장 0개 그룹/이탈/재마운트 확인                                                                        |
+| 5/7/9단계 이탈 → 4/6/8단계   | 각 상태 진입·이탈·재마운트 확인                                                                         |
+| 각 재개 상태에서 처음부터    | 자세 감지 전 POST 없음, 감지 후 restart 1회 및 다음 종목 resume 확인; 실제 초기화는 시작 자세 감지 시점 |
+| 새로고침/뒤로가기/홈 재진입  | 메모리 라우터 재마운트·서버 재조회 및 완료 단계 뒤로가기 차단 확인                                      |
+| 자유 운동 시작/완료/취소     | 프론트 측정 캐시/진행 조회/재개/재시작 호출 불변 확인; 서버 정리 정책은 블로커                          |
+| 빠른/느린 로딩               | 20/500/1300ms 요청, 실패, 1200ms 저장 확인. 500ms 최소 및 느린 요청 추가 지연 없음                      |
+| 중복 이벤트/클릭, StrictMode | 세션 1회 생성·종목 저장 확인 1회·언마운트 후 늦은 응답 무시                                             |
+| 서버 시간/플랭크             | remainingTimeMs 표시, 로컬 90/180초 경과만으로 완료되지 않음, 서버 완료 이벤트 후 이동                  |
+| 세로/가로                    | 테스트 데이터 브라우저: 390×844, 844×390, 667×375에서 안내·카메라 픽토그램·완료 모달 확인               |
+| 최종 완료 → 분석             | 비활성 뒤로가기, 모달 닫기 없음, 분석 경로 replace 이동 확인                                            |
 
 ### 코드 검사
 

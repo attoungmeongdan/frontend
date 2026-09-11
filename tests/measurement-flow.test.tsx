@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { MEASURE_STEPS } from "@/constants/measure";
+import { MEASUREMENT_RESULT_EXERCISES } from "@/constants/result";
 import MeasurePage from "@/pages/MeasurePage";
 import * as api from "@/apis/exerciseSessions";
 import { MEASUREMENT_ORDER, MEASUREMENT_PROGRESS_KEY } from "@/utils/measurementProgress";
@@ -118,7 +120,7 @@ function pose(index: number) {
   } else {
     set(11, 0.1, 0.5);
     set(23, 0.5, 0.5);
-    set(25, 0.7, index === 1 ? 0.3 : 0.5);
+    set(25, 0.7, index === 2 ? 0.3 : 0.5);
     set(27, 0.9, 0.5);
     set(13, 0.1, 0.7);
     set(15, index === 3 ? 0.3 : 0.1, index === 3 ? 0.7 : 0.9);
@@ -220,8 +222,21 @@ describe("measurement page with shared session + start-pose hooks", () => {
     await tick(1);
     expect(screen.getByRole("dialog").textContent).toContain("같이 운동");
     expect(api.createWorkoutSession).not.toHaveBeenCalled();
+    const expectedApi = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"];
+    const expectedNames = ["의자앉았다일어나기", "팔굽혀펴기", "윗몸일으키기", "플랭크"];
+    expect(MEASUREMENT_ORDER).toEqual(expectedApi);
+    expect(MEASURE_STEPS.map((step) => step.name)).toEqual(expectedNames);
+    expect(MEASUREMENT_RESULT_EXERCISES.map((step) => step.name)).toEqual(expectedNames);
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "의자 앉았다 일어나기, 팔굽혀펴기,\n윗몸일으키기, 플랭크",
+    );
     for (let index = 0; index < 4; index++) {
+      if (index > 0) expect(screen.getByRole("dialog").textContent).toContain(expectedNames[index]);
       await start(index);
+      expect(lastSession.exerciseType).toBe(expectedApi[index]);
+      expect(
+        screen.getByLabelText(`체력 측정 ${index + 1}/4 · ${expectedNames[index]} 카메라`),
+      ).toBeTruthy();
       expect(Socket.sockets).toHaveLength(index + 1);
       complete();
       await tick(499);
@@ -262,7 +277,7 @@ describe("measurement page with shared session + start-pose hooks", () => {
       await tick();
       const dialog = screen.getByRole("dialog");
       expect(dialog.textContent).toContain(
-        count === 0 ? "같이 운동" : ["", "윗몸일으키기", "팔굽혀펴기", "플랭크"][count],
+        count === 0 ? "같이 운동" : ["", "팔굽혀펴기", "윗몸일으키기", "플랭크"][count],
       );
       expect(api.restartMeasurementSession).not.toHaveBeenCalled();
     },
@@ -296,7 +311,7 @@ describe("measurement page with shared session + start-pose hooks", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "저장 다시 시도" }));
     await tick();
-    expect(screen.getByRole("dialog").textContent).toContain("윗몸일으키기");
+    expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
     expect(Socket.sockets).toHaveLength(1);
   });
   it("slow saving ends at request completion without another 500ms", async () => {
@@ -312,7 +327,7 @@ describe("measurement page with shared session + start-pose hooks", () => {
     await tick(1199);
     expect(screen.queryByRole("dialog")).toBeNull();
     await tick(1);
-    expect(screen.getByRole("dialog").textContent).toContain("윗몸일으키기");
+    expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
   });
   it("load failure never silently starts a new measurement", async () => {
     vi.mocked(api.getMeasurementProgress).mockRejectedValue(new Error("offline"));
@@ -321,12 +336,12 @@ describe("measurement page with shared session + start-pose hooks", () => {
     expect(screen.getByRole("alert").textContent).toContain("offline");
     expect(api.createWorkoutSession).not.toHaveBeenCalled();
   });
-  it("fails closed on the deployed backend's chair→push-up order", async () => {
+  it("rejects a next exercise inconsistent with the backend sequence", async () => {
     saved = 1;
     group = "existing-group";
     vi.mocked(api.getMeasurementProgress).mockResolvedValue({
       ...progress(),
-      nextExerciseType: "PUSH_UP",
+      nextExerciseType: "SIT_UP",
     });
     mount();
     await tick();
