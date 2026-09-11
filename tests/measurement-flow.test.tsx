@@ -118,7 +118,7 @@ function mount(state?: object) {
     [
       { path: "/", element: <div>Home</div> },
       { path: "/measure", element: <MeasurePage /> },
-      { path: "/measurements/:id/analysis", element: <div>Analysis</div> },
+      { path: "/measurements/:measurementGroupId/analysis", element: <div>Analysis</div> },
     ],
     { initialEntries: ["/", { pathname: "/measure", state }], initialIndex: 1 },
   );

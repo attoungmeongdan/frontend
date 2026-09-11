@@ -44,7 +44,7 @@ export function buildMonthGrid(activity: MonthlyActivity): DayCell[][] {
         isFuture: isInMonth && today !== null && date > today,
         isBeforeJoin,
         exerciseCount,
-        measurementId: record?.measurementId ?? null,
+        measurementGroupId: record?.measurementGroupId ?? null,
       };
     }),
   );
@@ -64,4 +64,27 @@ export function selectMascotMessage({ today, exercisedDays }: MonthlyActivity): 
   if (didYesterday) return MASCOT_MESSAGES.yesterdayOnly;
   if (didToday) return MASCOT_MESSAGES.todayOnly;
   return MASCOT_MESSAGES.neither;
+}
+
+/** Keep the viewed month in the URL so history navigation and reload restore it. */
+export function readCalendarMonth(
+  params: URLSearchParams,
+  today: { year: number; month: number },
+  joinedAt: { year: number; month: number } | null,
+) {
+  const yearText = params.get("year") ?? "";
+  const monthText = params.get("month") ?? "";
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const valid =
+    /^\d{4}$/.test(yearText) &&
+    /^\d{1,2}$/.test(monthText) &&
+    year >= 1000 &&
+    month >= 1 &&
+    month <= 12;
+  const requested = valid ? { year, month } : today;
+  const index = (value: { year: number; month: number }) => value.year * 12 + value.month;
+  if (index(requested) > index(today)) return today;
+  if (joinedAt && index(requested) < index(joinedAt)) return joinedAt;
+  return requested;
 }

@@ -1,5 +1,5 @@
 import { LoaderCircle, TriangleAlert } from "lucide-react";
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import ActivityCalendar from "@/components/calendar/ActivityCalendar";
 import MonthlyRateCard from "@/components/calendar/MonthlyRateCard";
 import MascotSpeech from "@/components/common/MascotSpeech";
@@ -12,7 +12,7 @@ import {
 } from "@/constants/calendar";
 import { useMonthlyActivity } from "@/hooks/useMonthlyActivity";
 import { useMyProfile } from "@/hooks/useMyPage";
-import { selectMascotMessage } from "@/utils/calendar";
+import { selectMascotMessage, readCalendarMonth } from "@/utils/calendar";
 import { getSeoulToday, parseSeoulDate } from "@/utils/date";
 
 /** 연·월을 한 달 옮긴다. 12월 → 1월 처럼 해가 바뀌는 경우를 함께 처리한다 */
@@ -25,19 +25,31 @@ function shiftMonth(year: number, month: number, delta: number) {
 // 08_Calendar — /calendar
 function CalendarPage() {
   const seoulToday = getSeoulToday();
-  const [view, setView] = useState({ year: seoulToday.year, month: seoulToday.month });
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // 가입일 전 기록은 없으므로 가입한 달보다 앞으로는 못 가고, 가입한 달의 가입일 전 날짜는 가린다
   const { data: profile } = useMyProfile();
   const joinedAt = parseSeoulDate(profile?.createdAt);
+  const view = readCalendarMonth(searchParams, seoulToday, joinedAt);
+  const setView = (next: { year: number; month: number }) => {
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        params.set("year", String(next.year));
+        params.set("month", String(next.month));
+        return params;
+      },
+      { replace: true },
+    );
+  };
   const isJoinedMonth =
     joinedAt !== null && view.year === joinedAt.year && view.month === joinedAt.month;
 
   const isCurrentMonth = view.year === seoulToday.year && view.month === seoulToday.month;
   const { status, activity, rate, retry } = useMonthlyActivity(view.year, view.month, joinedAt);
 
-  const goPrevMonth = () => setView((current) => shiftMonth(current.year, current.month, -1));
-  const goNextMonth = () => setView((current) => shiftMonth(current.year, current.month, 1));
+  const goPrevMonth = () => setView(shiftMonth(view.year, view.month, -1));
+  const goNextMonth = () => setView(shiftMonth(view.year, view.month, 1));
 
   if (status === "loading") {
     return (

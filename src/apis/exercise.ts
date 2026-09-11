@@ -31,7 +31,7 @@ export async function getWorkoutAnalysis(sessionId: string) {
 /** 측정 그룹의 종합 분석(동연령대 비교·종합점수·백분위·운동 수행력) */
 export async function getMeasurementAnalysis(measurementGroupId: string) {
   const { data } = await axiosInstance.get<CommonResponse<MeasurementAnalysis>>(
-    `/api/v1/exercise-records/measurements/${measurementGroupId}/analysis`,
+    `/api/v1/exercise-records/measurements/${encodeURIComponent(measurementGroupId)}/analysis`,
   );
 
   return data.data;
@@ -40,7 +40,7 @@ export async function getMeasurementAnalysis(measurementGroupId: string) {
 /** 측정 그룹의 원 측정값만 조회. 평균·비교·백분위는 포함하지 않는다 */
 export async function getMeasurementResults(measurementGroupId: string) {
   const { data } = await axiosInstance.get<CommonResponse<MeasurementResults>>(
-    `/api/v1/exercise-records/measurements/${measurementGroupId}/results`,
+    `/api/v1/exercise-records/measurements/${encodeURIComponent(measurementGroupId)}/results`,
   );
 
   return data.data;
@@ -52,7 +52,7 @@ export async function getMeasurementResults(measurementGroupId: string) {
  */
 export async function createMeasurementInsights(measurementGroupId: string) {
   const { data } = await axiosInstance.post<CommonResponse<MeasurementInsight>>(
-    `/api/v1/exercise-records/measurements/${measurementGroupId}/insights`,
+    `/api/v1/exercise-records/measurements/${encodeURIComponent(measurementGroupId)}/insights`,
   );
 
   return data.data;
@@ -61,7 +61,7 @@ export async function createMeasurementInsights(measurementGroupId: string) {
 /** 측정 그룹에 저장된 맞춤 추천 운동. 아직 생성되지 않았으면 404 */
 export async function getMeasurementInsights(measurementGroupId: string) {
   const { data } = await axiosInstance.get<CommonResponse<MeasurementInsight>>(
-    `/api/v1/exercise-records/measurements/${measurementGroupId}/insights`,
+    `/api/v1/exercise-records/measurements/${encodeURIComponent(measurementGroupId)}/insights`,
   );
 
   return data.data;

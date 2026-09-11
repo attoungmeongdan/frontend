@@ -16,6 +16,7 @@ import turtleComplete from "@/assets/mascots/turtle-today-complete.png";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { measurementAnalysisPath } from "@/utils/measurementRoutes";
 import type { ExerciseCameraState, PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 const formatTime = (ms: number) => {
@@ -77,7 +78,7 @@ function MeasurePage() {
     phase === "loading" ||
     session.connectionState === "connecting" ||
     session.connectionState === "completing";
-  const analysisPath = groupId ? `/measurements/${groupId}/analysis` : null;
+  const analysisPath = groupId ? measurementAnalysisPath(groupId) : null;
   const blocker = useBlocker(({ nextLocation }) =>
     phase === "complete" ? nextLocation.pathname !== analysisPath : busy,
   );
