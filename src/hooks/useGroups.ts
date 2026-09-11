@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createGroup,
   deleteGroup,
+  getGroupDailyWorkout,
   getGroupInviteLink,
   getGroupMembers,
+  getGroupMonthlyWorkout,
   getMyGroups,
   isGroupOwner,
   joinGroup,
@@ -107,4 +109,34 @@ export function useGroupMutations() {
       onSuccess: refreshGroups,
     }),
   };
+}
+
+const dailyWorkoutQueryKey = (groupId: number, date: string) =>
+  ["groups", groupId, "workout", "daily", date] as const;
+const monthlyWorkoutQueryKey = (groupId: number, yearMonth: string) =>
+  ["groups", groupId, "workout", "monthly", yearMonth] as const;
+
+/**
+ * 그룹 하루치 운동량. 오늘 탭의 바 차트에 쓴다.
+ * date 를 비우면 서버가 오늘(Asia/Seoul)로 본다. 기본값이면 굳이 보내지 않는다.
+ */
+export function useGroupDailyWorkout(groupId: number | null, date?: string, enabled = true) {
+  return useQuery({
+    queryKey: dailyWorkoutQueryKey(groupId ?? 0, date ?? "today"),
+    queryFn: () => getGroupDailyWorkout(groupId as number, date),
+    enabled: enabled && groupId !== null,
+  });
+}
+
+/**
+ * 그룹 한 달 실행률 랭킹과 멤버별 일별 기록.
+ * yearMonth 를 비우면 서버가 이번 달로 본다. 서버의 YearMonth 바인딩에 기대지 않으려고
+ * 이번 달일 때는 파라미터를 아예 보내지 않는다.
+ */
+export function useGroupMonthlyWorkout(groupId: number | null, yearMonth?: string, enabled = true) {
+  return useQuery({
+    queryKey: monthlyWorkoutQueryKey(groupId ?? 0, yearMonth ?? "current"),
+    queryFn: () => getGroupMonthlyWorkout(groupId as number, yearMonth),
+    enabled: enabled && groupId !== null,
+  });
 }
