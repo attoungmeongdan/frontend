@@ -21,7 +21,7 @@ import type {
   PoseLandmarkPayload,
 } from "@/types/exercise";
 
-const INTRO_BODY = "의자 앉았다 일어나기, 윗몸일으키기,\n팔굽혀펴기, 플랭크\n총 4단계로 진행돼요!";
+const INTRO_BODY = "의자 앉았다 일어나기, 팔굽혀펴기,\n윗몸일으키기, 플랭크\n총 4단계로 진행돼요!";
 const formatTime = (ms: number) => {
   const seconds = Math.max(0, Math.ceil(ms / 1000));
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
@@ -102,7 +102,7 @@ function MeasurePage() {
           (item) => item.exercise === toExercise(value.nextExerciseType),
         );
         setStepIndex(index >= 0 ? index : 0);
-        setResume(value.completedExercises.length > 0);
+        setResume(!!value.measurementGroupId);
         setPhase(value.completedExercises.length ? "ready" : "intro");
       })
       .catch(() => setPhase("intro"));
