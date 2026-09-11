@@ -8,10 +8,8 @@ interface GroupEmptyStateProps {
 
 function GroupEmptyState({ onCreate }: GroupEmptyStateProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-2.5">
-      <span className="bg-surface-subtle flex size-22 items-center justify-center rounded-full">
-        <Users size={40} aria-hidden className="text-brand-mint" />
-      </span>
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-2.5 pb-12">
+      <Users size={40} aria-hidden className="text-brand-mint" />
 
       <div className="flex w-full flex-col items-center gap-2">
         <h2 className="text-text-primary text-[18px] leading-[26px] font-bold">

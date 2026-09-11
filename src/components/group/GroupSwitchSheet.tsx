@@ -1,11 +1,11 @@
 import BottomSheet from "@/components/common/BottomSheet";
 import { GROUP_SHEET } from "@/constants/group";
 import { Plus } from "lucide-react";
-import type { Group } from "@/types/group";
+import type { GroupResponse } from "@/apis/group";
 
 interface GroupSwitchSheetProps {
   open: boolean;
-  groups: Group[];
+  groups: GroupResponse[];
   currentGroupId: number;
   onClose: () => void;
   onSelect: (groupId: number) => void;
@@ -55,7 +55,7 @@ function GroupSwitchSheet({
                     {group.name}
                   </span>
                   <span className="text-text-secondary text-caption">
-                    팀원 {group.members.length}명
+                    팀원 {group.currentMemberCount}/{group.maxMemberCount}명
                   </span>
                 </span>
               </button>
