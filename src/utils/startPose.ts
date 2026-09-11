@@ -28,6 +28,10 @@ function isHorizontal(first: PoseLandmarkPayload, second: PoseLandmarkPayload) {
   return Math.abs(first.x - second.x) > Math.abs(first.y - second.y) * 1.15;
 }
 
+function isLyingDown(first: PoseLandmarkPayload, second: PoseLandmarkPayload) {
+  return Math.abs(first.x - second.x) > Math.abs(first.y - second.y) * 0.6;
+}
+
 function matchesSide(
   exerciseType: ExerciseType,
   landmarks: PoseLandmarkPayload[],
@@ -69,7 +73,7 @@ function matchesSide(
         isHorizontal(shoulder, ankle)
       );
     case "sit-up":
-      return hipAngle >= 145 && kneeAngle <= 125 && isHorizontal(shoulder, hip);
+      return kneeAngle <= 145 && isLyingDown(shoulder, hip);
     case "plank": {
       const elbowAngle = angle(shoulder, elbow, wrist);
       return (
