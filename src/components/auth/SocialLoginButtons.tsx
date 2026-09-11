@@ -7,8 +7,6 @@ interface SocialLoginButtonsProps {
   disabled?: boolean;
 }
 
-// Feature/SocialLoginButtons (GaTOb) — 폭 330, 버튼 높이 52, radius 16, 세로 gap 12
-// 로고는 Dear.E 프로젝트의 SVG를 그대로 사용
 function SocialLoginButtons({ onSelect, disabled = false }: SocialLoginButtonsProps) {
   return (
     <div className={`flex w-[330px] flex-col gap-3 ${disabled ? "opacity-50" : ""}`}>
