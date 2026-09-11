@@ -12,7 +12,7 @@ import Toast from "@/components/ui/Toast";
 import { ACCOUNT_ACTIONS, WITHDRAW_CONFIRM } from "@/constants/mypage";
 import { useAccountActions, useMyProfile } from "@/hooks/useMyPage";
 import { usePersonalInfoEdit } from "@/hooks/usePersonalInfoEdit";
-import { RECOMMENDATION_STATUS, RECOMMENDATIONS_MOCK } from "@/mocks/mypage";
+import { useRecommendations } from "@/hooks/useRecommendations";
 import { toPersonalInfoItems } from "@/utils/user";
 
 const TOAST_DURATION = 3000;
@@ -31,9 +31,7 @@ function MyPage() {
     onError: setToastMessage,
   });
 
-  // 추천 운동 API 는 아직 없어 목데이터를 유지한다
-  const recommendationStatus = RECOMMENDATION_STATUS;
-  const handleRetryRecommendation = () => {};
+  const recommendation = useRecommendations();
 
   useEffect(() => {
     if (toastMessage === null) return;
@@ -78,9 +76,9 @@ function MyPage() {
       )}
 
       <RecommendationSection
-        status={recommendationStatus}
-        recommendations={RECOMMENDATIONS_MOCK}
-        onRetry={handleRetryRecommendation}
+        status={recommendation.status}
+        recommendations={recommendation.recommendations}
+        onRetry={recommendation.retry}
       />
 
       <div className="flex w-full gap-3">

@@ -3,6 +3,7 @@ import type { CommonResponse } from "@/types/api";
 import type {
   MeasurementAnalysis,
   MeasurementHistory,
+  MeasurementInsight,
   MeasurementProgress,
   MeasurementResults,
   WorkoutAnalysis,
@@ -48,6 +49,15 @@ export async function getMeasurementAnalysis(measurementGroupId: string) {
 export async function getMeasurementResults(measurementGroupId: string) {
   const { data } = await axiosInstance.get<CommonResponse<MeasurementResults>>(
     `/api/v1/exercise-records/measurements/${measurementGroupId}/results`,
+  );
+
+  return data.data;
+}
+
+/** 측정 그룹에 저장된 맞춤 추천 운동. 생성은 측정 완료 흐름에서 하므로 여기서는 읽기만 한다 */
+export async function getMeasurementInsights(measurementGroupId: string) {
+  const { data } = await axiosInstance.get<CommonResponse<MeasurementInsight>>(
+    `/api/v1/exercise-records/measurements/${measurementGroupId}/insights`,
   );
 
   return data.data;
