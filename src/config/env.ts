@@ -15,6 +15,13 @@ function resolveApiBaseUrl() {
     throw new Error("VITE_API_BASE_URL이 설정되지 않았어요. .env 파일을 확인해 주세요.");
   }
 
+  // "/" 는 같은 도메인으로 보내라는 뜻이다.
+  // vercel.json rewrites(배포)와 vite server.proxy(로컬)가 백엔드로 전달하며,
+  // 이때 인증 쿠키가 서드파티가 아니라 퍼스트파티로 저장돼 모바일 브라우저에서도 유지된다.
+  if (raw === "/") {
+    return "";
+  }
+
   let parsed: URL;
 
   try {
