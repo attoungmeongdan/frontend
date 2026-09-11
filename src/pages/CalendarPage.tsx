@@ -10,8 +10,8 @@ import {
   LOADING_MESSAGE,
   MASCOT_MESSAGES,
 } from "@/constants/calendar";
-import { CALENDAR_STATUS, getCalendarMock } from "@/mocks/calendar";
-import { calculateMonthlyRate, selectMascotMessage } from "@/utils/calendar";
+import { useMonthlyActivity } from "@/hooks/useMonthlyActivity";
+import { selectMascotMessage } from "@/utils/calendar";
 import { getSeoulToday } from "@/utils/date";
 
 /** 연·월을 한 달 옮긴다. 12월 → 1월 처럼 해가 바뀌는 경우를 함께 처리한다 */
@@ -23,13 +23,11 @@ function shiftMonth(year: number, month: number, delta: number) {
 
 // 08_Calendar — /calendar
 function CalendarPage() {
-  // API 연동 전이라 목데이터를 그대로 쓴다
-  const status = CALENDAR_STATUS;
   const seoulToday = getSeoulToday();
   const [view, setView] = useState({ year: seoulToday.year, month: seoulToday.month });
 
   const isCurrentMonth = view.year === seoulToday.year && view.month === seoulToday.month;
-  const activity = getCalendarMock(view.year, view.month);
+  const { status, activity, rate, retry } = useMonthlyActivity(view.year, view.month);
 
   const goPrevMonth = () => setView((current) => shiftMonth(current.year, current.month, -1));
   const goNextMonth = () => setView((current) => shiftMonth(current.year, current.month, 1));
@@ -65,8 +63,7 @@ function CalendarPage() {
           </p>
           <button
             type="button"
-            // API 연동 시 쿼리 refetch 로 교체
-            onClick={() => window.location.reload()}
+            onClick={() => void retry()}
             className="bg-action-primary-bg text-action-primary-fg rounded-input text-button h-control w-full pb-1"
           >
             {ERROR_RETRY_LABEL}
@@ -74,6 +71,10 @@ function CalendarPage() {
         </div>
       </div>
     );
+  }
+
+  if (!activity || !rate) {
+    return null;
   }
 
   return (
@@ -85,11 +86,7 @@ function CalendarPage() {
         onNextMonth={goNextMonth}
         canGoNext={!isCurrentMonth}
       />
-      <MonthlyRateCard
-        rate={calculateMonthlyRate(activity)}
-        isCurrentMonth={isCurrentMonth}
-        month={view.month}
-      />
+      <MonthlyRateCard rate={rate} isCurrentMonth={isCurrentMonth} month={view.month} />
     </div>
   );
 }
