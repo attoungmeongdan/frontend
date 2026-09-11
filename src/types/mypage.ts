@@ -13,3 +13,9 @@ export interface PersonalInfoItem {
   /** 수정 가능한 항목만 값이 있다 */
   field: EditableField | null;
 }
+
+/** 저장 진행 피드백. saving 은 스피너, saved 는 체크를 연필 자리에 보여 준다 */
+export interface SaveFeedback {
+  field: EditableField;
+  phase: "saving" | "saved";
+}

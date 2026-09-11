@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Gender } from "@/apis/auth";
 import { updateMyProfile, type UserProfile } from "@/apis/user";
-import { PERSONAL_INFO_ERROR } from "@/constants/mypage";
+import { PERSONAL_INFO_ERROR, PERSONAL_INFO_SAVING_MIN_MS } from "@/constants/mypage";
 import { MY_PROFILE_QUERY_KEY } from "@/hooks/useMyPage";
-import type { EditableField } from "@/types/mypage";
+import type { EditableField, SaveFeedback } from "@/types/mypage";
 
 interface EditingValues {
   age: string;
@@ -40,13 +40,19 @@ export function usePersonalInfoEdit({ profile, onError }: Options) {
   const queryClient = useQueryClient();
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [editing, setEditing] = useState<EditingValues>(EMPTY_VALUES);
+  // 저장 중·저장 완료 피드백. 화면이 그대로면 저장됐는지 알기 어려워 연필 자리에 잠깐 보여 준다
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
 
   const mutation = useMutation({
     mutationFn: updateMyProfile,
-    onSuccess: (updated) => {
-      queryClient.setQueryData(MY_PROFILE_QUERY_KEY, updated);
-      setEditingField(null);
-    },
+    onSuccess: (updated) => queryClient.setQueryData(MY_PROFILE_QUERY_KEY, updated),
     onError: () => onError(PERSONAL_INFO_ERROR.save),
   });
 
@@ -65,7 +71,7 @@ export function usePersonalInfoEdit({ profile, onError }: Options) {
   const cancelEdit = () => setEditingField(null);
 
   const save = () => {
-    if (!profile) return;
+    if (!profile || editingField === null) return;
 
     if (
       !isValidNumber(editing.age) ||
@@ -76,22 +82,51 @@ export function usePersonalInfoEdit({ profile, onError }: Options) {
       return;
     }
 
-    mutation.mutate({
-      nickname: profile.nickname,
-      age: toNumberOrNull(editing.age),
-      gender: editing.gender,
-      height: toNumberOrNull(editing.height),
-      weight: toNumberOrNull(editing.weight),
-    });
+    // 저장 버튼 대신 연필 자리에서 진행 상황을 보여 주므로 요청과 함께 읽기 상태로 돌아간다
+    const field = editingField;
+    const startedAt = Date.now();
+
+    setEditingField(null);
+    setSaveFeedback({ field, phase: "saving" });
+
+    mutation.mutate(
+      {
+        nickname: profile.nickname,
+        age: toNumberOrNull(editing.age),
+        gender: editing.gender,
+        height: toNumberOrNull(editing.height),
+        weight: toNumberOrNull(editing.weight),
+      },
+      {
+        onSuccess: () => {
+          // 응답이 빨라도 스피너가 한 바퀴는 돌고 체크로 바뀌게 남은 시간만큼 기다린다
+          const remaining = Math.max(0, PERSONAL_INFO_SAVING_MIN_MS - (Date.now() - startedAt));
+
+          feedbackTimerRef.current = setTimeout(
+            () => setSaveFeedback({ field, phase: "saved" }),
+            remaining,
+          );
+        },
+        // 입력값은 그대로 두었으므로 실패하면 같은 줄을 다시 수정 상태로 연다
+        onError: () => {
+          setSaveFeedback(null);
+          setEditingField(field);
+        },
+      },
+    );
   };
+
+  const endSaveFeedback = () => setSaveFeedback(null);
 
   return {
     editingField,
     editing,
     isSaving: mutation.isPending,
+    saveFeedback,
     startEdit,
     cancelEdit,
     save,
+    endSaveFeedback,
     changeAge: (age: string) => setEditing((prev) => ({ ...prev, age })),
     changeGender: (gender: Gender) => setEditing((prev) => ({ ...prev, gender })),
     changeHeight: (height: string) => setEditing((prev) => ({ ...prev, height })),

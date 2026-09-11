@@ -23,37 +23,42 @@ function Header({ title, showBack = false, showClose = false, backTo, onBack }: 
   };
 
   return (
-    <header className="bg-surface-default flex h-14 shrink-0 items-center justify-between px-2">
-      <div className="flex size-11 items-center justify-center">
-        {showBack && (
-          <button
-            type="button"
-            aria-label="뒤로 가기"
-            onClick={handleBack}
-            className="text-text-primary flex size-11 items-center justify-center"
-          >
-            <ArrowLeft size={24} aria-hidden />
-          </button>
-        )}
-      </div>
+    // 아이폰 노치·다이나믹 아일랜드 아래로 내리고, safe-area 가 없는 기기도 최소 8px 은 띄운다
+    // 높이 84px + 상단 8px = 92px 로 바텀 내비게이션(12 + 60 + 20)과 맞춘다
+    <header className="bg-surface-default box-content flex h-21 shrink-0 flex-col justify-end px-2 pt-[max(8px,env(safe-area-inset-top))]">
+      {/* 버튼·제목 중심이 84px 의 48px 지점에 오도록 56px 행을 아래에서 8px 띄운다 */}
+      <div className="mb-2 flex h-14 items-center justify-between">
+        <div className="flex size-11 items-center justify-center">
+          {showBack && (
+            <button
+              type="button"
+              aria-label="뒤로 가기"
+              onClick={handleBack}
+              className="text-text-primary flex size-11 items-center justify-center"
+            >
+              <ArrowLeft size={24} aria-hidden />
+            </button>
+          )}
+        </div>
 
-      {title ? (
-        <h1 className="text-text-primary text-title">{title}</h1>
-      ) : (
-        <img src={wordmark} alt="Fittle" className="h-7 w-21 object-contain" />
-      )}
-
-      <div className="flex size-11 items-center justify-center">
-        {showClose && (
-          <button
-            type="button"
-            aria-label="닫고 홈으로 돌아가기"
-            onClick={() => navigate("/")}
-            className="text-text-primary flex size-11 items-center justify-center"
-          >
-            <X size={24} aria-hidden />
-          </button>
+        {title ? (
+          <h1 className="text-text-primary text-title">{title}</h1>
+        ) : (
+          <img src={wordmark} alt="Fittle" className="h-7 w-21 object-contain" />
         )}
+
+        <div className="flex size-11 items-center justify-center">
+          {showClose && (
+            <button
+              type="button"
+              aria-label="닫고 홈으로 돌아가기"
+              onClick={() => navigate("/")}
+              className="text-text-primary flex size-11 items-center justify-center"
+            >
+              <X size={24} aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
