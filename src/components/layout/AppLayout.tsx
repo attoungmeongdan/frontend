@@ -21,6 +21,7 @@ function AppLayout() {
             title={header.title}
             showBack={header.showBack}
             showClose={header.showClose}
+            showProfile={header.showProfile}
             backTo={header.backTo}
           />
         )}

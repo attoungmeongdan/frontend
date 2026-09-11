@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { refreshAccessToken } from "@/apis/auth";
-import { getAccessToken, setAccessToken } from "@/apis/tokenStore";
+import { getAccessToken, onSessionExpired, setAccessToken } from "@/apis/tokenStore";
 import { AuthContext, type AuthStatus } from "@/contexts/authContext";
 
 const OAUTH_CALLBACK_PATTERN = /^\/auth\/oauth2\/[^/]+\/callback$/;
@@ -38,6 +38,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     // 소셜 콜백은 이 페이지가 직접 인증을 끝내고 상태를 바꾼다.
     // 여기서 복구까지 시도하면 쿠키가 심어지기 전에 재발급이 나가 401 이 한 번 더 뜬다.
     if (isOAuthCallbackPath(window.location.pathname)) {
+      setStatus("unauthenticated");
       return;
     }
 
@@ -74,6 +75,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
     },
     [queryClient],
   );
+
+  useEffect(() => onSessionExpired(() => changeSession("unauthenticated")), [changeSession]);
 
   const markAuthenticated = useCallback(() => changeSession("authenticated"), [changeSession]);
   const markSignupRequired = useCallback(() => changeSession("signup_required"), [changeSession]);
