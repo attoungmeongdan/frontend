@@ -46,7 +46,19 @@ export async function getMeasurementResults(measurementGroupId: string) {
   return data.data;
 }
 
-/** 측정 그룹에 저장된 맞춤 추천 운동. 생성은 측정 완료 흐름에서 하므로 여기서는 읽기만 한다 */
+/**
+ * 측정 그룹의 맞춤 추천 운동 생성. 그룹당 한 번만 만들고 다시 부르면 저장된 결과를 준다.
+ * 409 는 측정 미완료 또는 생성 중, 400 은 프로필 나이·성별 누락, 502 는 AI 생성 실패
+ */
+export async function createMeasurementInsights(measurementGroupId: string) {
+  const { data } = await axiosInstance.post<CommonResponse<MeasurementInsight>>(
+    `/api/v1/exercise-records/measurements/${measurementGroupId}/insights`,
+  );
+
+  return data.data;
+}
+
+/** 측정 그룹에 저장된 맞춤 추천 운동. 아직 생성되지 않았으면 404 */
 export async function getMeasurementInsights(measurementGroupId: string) {
   const { data } = await axiosInstance.get<CommonResponse<MeasurementInsight>>(
     `/api/v1/exercise-records/measurements/${measurementGroupId}/insights`,
