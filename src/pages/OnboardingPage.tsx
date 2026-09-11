@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
-import TipCard from "@/components/onboarding/TipCard";
+import TipCard from "@/components/common/TipCard";
 import Button from "@/components/ui/Button";
 import MascotSpeech from "@/components/ui/MascotSpeech";
 import ProgressIndicator from "@/components/ui/ProgressIndicator";

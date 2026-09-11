@@ -30,3 +30,12 @@ export const ERROR_RETRY_LABEL = "다시 불러오기";
 
 export const LEGEND_EXERCISED_LABEL = "운동 1~4개";
 export const LEGEND_MEASURED_LABEL = "체력 측정 완료";
+
+/** 범례 아래 안내. 측정한 날짜를 누르면 그날 분석으로 이동한다 */
+export const LEGEND_ANALYSIS_HINT = "날짜를 누르면 그날의 분석 결과를 볼 수 있어요.";
+
+/** 달력 하단 안내. 측정한 날짜를 누르면 그날 분석으로 이동한다 */
+export const CALENDAR_TIP = {
+  title: "측정 분석",
+  description: "체력 측정을 마친 날짜를 누르면 그날의 분석 결과를 볼 수 있어요.",
+} as const;

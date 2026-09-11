@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   LEGEND_EXERCISED_LABEL,
+  LEGEND_ANALYSIS_HINT,
   LEGEND_MEASURED_LABEL,
   WEEKDAY_LABELS,
 } from "@/constants/calendar";
@@ -109,6 +110,11 @@ function ActivityCalendar({
           <span className="text-text-secondary text-caption">{LEGEND_MEASURED_LABEL}</span>
         </li>
       </ul>
+
+      <p className="text-text-secondary text-caption flex items-center gap-1">
+        <Info size={14} aria-hidden className="text-brand-mint shrink-0" />
+        {LEGEND_ANALYSIS_HINT}
+      </p>
     </section>
   );
 }
