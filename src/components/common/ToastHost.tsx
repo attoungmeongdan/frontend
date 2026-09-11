@@ -18,7 +18,7 @@ function ToastHost({ message, size = "compact", icon, iconClassName }: ToastHost
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 12 }}
           transition={{ duration: 0.2 }}
-          className="pointer-events-none fixed inset-x-0 bottom-[calc(92px+max(20px,env(safe-area-inset-bottom)))] z-70 flex justify-center px-5"
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(92px+max(10px,env(safe-area-inset-bottom)))] z-70 flex justify-center px-5"
         >
           <Toast message={message} size={size} icon={icon} iconClassName={iconClassName} />
         </motion.div>
