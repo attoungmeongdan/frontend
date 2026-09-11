@@ -7,6 +7,7 @@ import {
   WEEKDAY_LABELS,
 } from "@/constants/calendar";
 import { MAX_EXERCISE_COUNT, type DayCell, type MonthlyActivity } from "@/types/calendar";
+import { measurementAnalysisPath } from "@/utils/measurementRoutes";
 import { buildMonthGrid } from "@/utils/calendar";
 
 interface ActivityCalendarProps {
@@ -52,8 +53,8 @@ function ActivityCalendar({
   const weeks = buildMonthGrid(activity);
   const showsMeasurement = variant === "personal";
 
-  const openAnalysis = (measurementId: string) => {
-    navigate(`/measurements/${measurementId}/analysis`);
+  const openAnalysis = (measurementGroupId: string) => {
+    navigate(measurementAnalysisPath(measurementGroupId));
   };
 
   return (
@@ -99,7 +100,7 @@ function ActivityCalendar({
         {weeks.map((week, weekIndex) => (
           <div key={weekIndex} className="flex">
             {week.map((cell, weekday) => (
-              <div key={weekday} className="flex h-[42px] flex-1 items-center justify-center">
+              <div key={weekday} className="flex h-11 min-w-0 flex-1 items-center justify-center">
                 <DayMark
                   cell={cell}
                   onOpenAnalysis={openAnalysis}
@@ -129,9 +130,13 @@ function ActivityCalendar({
       </ul>
 
       {showsMeasurement && (
-        <p className="text-text-secondary text-caption flex items-center gap-1">
+        <p
+          className="text-text-secondary text-caption flex items-center gap-1"
+          aria-label="체력 측정 완료 표시를 누르면 그날의 측정 결과를 알 수 있어요."
+        >
           <Info size={14} aria-hidden className="text-brand-mint shrink-0" />
-          {LEGEND_ANALYSIS_HINT}
+          <span className="bg-action-orange size-2.5 shrink-0 rounded-full" aria-hidden />
+          <span>{LEGEND_ANALYSIS_HINT}</span>
         </p>
       )}
     </section>
@@ -140,7 +145,7 @@ function ActivityCalendar({
 
 interface DayMarkProps {
   cell: DayCell;
-  onOpenAnalysis: (measurementId: string) => void;
+  onOpenAnalysis: (measurementGroupId: string) => void;
   /** false 면 측정 점과 분석 이동을 모두 빼고 운동 기록만 보여 준다 */
   showsMeasurement: boolean;
 }
@@ -151,11 +156,11 @@ interface DayMarkProps {
  * 측정한 날은 눌러서 측정 분석 화면으로 갈 수 있다.
  */
 function DayMark({ cell, onOpenAnalysis, showsMeasurement }: DayMarkProps) {
-  const { date, isToday, isFuture, isBeforeJoin, exerciseCount, measurementId } = cell;
+  const { date, isToday, isFuture, isBeforeJoin, exerciseCount, measurementGroupId } = cell;
 
   if (date === null) return null;
 
-  const isMeasured = showsMeasurement && measurementId !== null;
+  const isMeasured = showsMeasurement && !!measurementGroupId;
   const todayLabel = isToday ? " 오늘" : "";
   const measuredLabel = isMeasured ? " 체력 측정 완료" : "";
   const beforeJoinLabel = isBeforeJoin ? " 가입 전" : "";
@@ -172,7 +177,7 @@ function DayMark({ cell, onOpenAnalysis, showsMeasurement }: DayMarkProps) {
       : "text-text-primary";
 
   const mark = (
-    <div className="relative flex size-9 cursor-default items-center justify-center select-none">
+    <div className="relative flex size-9 items-center justify-center select-none">
       <div
         className="flex size-9 items-center justify-center rounded-full"
         style={{ background: toGaugeBackground(exerciseCount) }}
@@ -188,13 +193,13 @@ function DayMark({ cell, onOpenAnalysis, showsMeasurement }: DayMarkProps) {
   );
 
   // 측정한 날만 분석 화면으로 갈 수 있다
-  if (isMeasured && measurementId !== null) {
+  if (isMeasured && measurementGroupId) {
     return (
       <button
         type="button"
         aria-label={`${label}, 측정 분석 보기`}
-        onClick={() => onOpenAnalysis(measurementId)}
-        className="cursor-pointer"
+        onClick={() => onOpenAnalysis(measurementGroupId)}
+        className="hover:bg-surface-subtle focus-visible:outline-focus-ring flex min-h-11 w-full cursor-pointer items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 active:opacity-70"
       >
         {mark}
       </button>

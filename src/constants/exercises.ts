@@ -3,6 +3,7 @@ import plank from "@/assets/exercises/exercise-plank.png";
 import pushUp from "@/assets/exercises/exercise-push-up.png";
 import sitUp from "@/assets/exercises/exercise-sit-up.png";
 
+import { getExerciseContent } from "@/constants/exerciseContent";
 import type { ApiExerciseType, MeasurementHistoryKey } from "@/types/exercise";
 
 export type ExerciseType = "sit-up" | "chair-stand" | "push-up" | "plank";
@@ -30,8 +31,8 @@ export const EXERCISES: Exercise[] = [
     type: "chair-stand",
     apiType: "CHAIR_STAND",
     historyKey: "chairStand",
-    label: "스쿼트",
-    cardLabel: "스쿼트",
+    label: getExerciseContent("chair-stand", "WORKOUT").name,
+    cardLabel: getExerciseContent("chair-stand", "WORKOUT").name,
     icon: chairStand,
   },
   {

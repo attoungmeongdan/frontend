@@ -1,10 +1,15 @@
+import { getExerciseContent } from "@/constants/exerciseContent";
 import type { ExerciseType } from "@/constants/exercises";
 import type { ExerciseApiType } from "@/types/exercise";
 
 // Backend MeasurementSequence: chair stand → push-up → sit-up → plank.
 // Guides, session requests, resume positions and result cards share this order.
 export const MEASUREMENT_EXERCISES = [
-  { exercise: "chair-stand", apiType: "CHAIR_STAND", introName: "의자 앉았다 일어나기" },
+  {
+    exercise: "chair-stand",
+    apiType: "CHAIR_STAND",
+    introName: getExerciseContent("chair-stand", "MEASUREMENT").name,
+  },
   { exercise: "push-up", apiType: "PUSH_UP", introName: "팔굽혀펴기" },
   { exercise: "sit-up", apiType: "SIT_UP", introName: "윗몸일으키기" },
   { exercise: "plank", apiType: "PLANK", introName: "플랭크" },

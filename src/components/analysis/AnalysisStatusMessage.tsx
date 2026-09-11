@@ -13,7 +13,7 @@ const STATUS_CONTENT = {
     icon: TriangleAlert,
     iconClass: "text-feedback-error",
     title: "분석 결과를 불러오지 못했어요",
-    description: "오늘 측정 완료 기록은 안전하게 저장되어 있어요. 잠시 후 다시 시도해 주세요.",
+    description: "측정 기록은 그대로 유지돼요. 잠시 후 다시 시도해 주세요.",
     actionLabel: "다시 불러오기",
   },
   empty: {

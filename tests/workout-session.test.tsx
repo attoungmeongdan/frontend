@@ -196,10 +196,13 @@ describe("measurement completion and recovery", () => {
 
   it("ignores delayed result responses after leaving the session", async () => {
     let resolve!: (value: ExerciseSessionResult) => void;
-    vi.mocked(api.getWorkoutSessionResult).mockReturnValue(
-      new Promise((done) => {
-        resolve = done;
-      }),
+    let requestSignal: AbortSignal | undefined;
+    vi.mocked(api.getWorkoutSessionResult).mockImplementation(
+      (_sessionId, signal) =>
+        new Promise((done) => {
+          requestSignal = signal;
+          resolve = done;
+        }),
     );
     const hook = setup();
     await start(hook);
@@ -207,6 +210,7 @@ describe("measurement completion and recovery", () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
     act(() => hook.result.current.cancel());
+    expect(requestSignal?.aborted).toBe(true);
     await act(async () => resolve(stored("COMPLETED")));
     expect(hook.onCompleted).not.toHaveBeenCalled();
     expect(hook.result.current.connectionState).toBe("idle");
@@ -305,4 +309,98 @@ it("does not duplicate missing frames or burst after backpressure and a long pau
   act(() => hook.result.current.sendPoseFrame(points));
   expect(socket.send).toHaveBeenCalledTimes(2);
   clock.mockRestore();
+});
+
+it("keeps sending after a frame-processing error with 40 seconds left", async () => {
+  const hook = setup();
+  const socket = await start(hook);
+  const log = vi.spyOn(console, "warn").mockImplementation(() => {});
+  act(() => {
+    socket.message(analysis(40000));
+    socket.message({ type: "ERROR", code: "EXERCISE_PROCESSING_FAILED", message: "frame failed" });
+    hook.result.current.sendPoseFrame(poseFor("chair-stand"));
+  });
+  expect(hook.result.current.connectionState).toBe("active");
+  expect(hook.result.current.connectionError).toBe("frame failed");
+  expect(socket.send).toHaveBeenCalledOnce();
+  expect(api.getWorkoutSessionResult).not.toHaveBeenCalled();
+  expect(log).toHaveBeenCalledWith(
+    "[exercise-session]",
+    expect.objectContaining({ code: "EXERCISE_PROCESSING_FAILED", sessionId: 1 }),
+  );
+  act(() => socket.message(analysis(39000)));
+  expect(hook.result.current.connectionError).toBeNull();
+  vi.mocked(api.getWorkoutSessionResult).mockResolvedValue(stored("COMPLETED"));
+  await act(async () => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
+  expect(hook.onCompleted).toHaveBeenCalledOnce();
+  log.mockRestore();
+});
+
+it("waits for persisted completion when the socket event beats the result read", async () => {
+  const hook = setup();
+  const socket = await start(hook);
+  await act(async () => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
+  expect(hook.result.current.connectionState).toBe("completing");
+  expect(hook.onCompleted).not.toHaveBeenCalled();
+  vi.mocked(api.getWorkoutSessionResult).mockResolvedValue(stored("COMPLETED"));
+  await act(async () => vi.advanceTimersByTimeAsync(1000));
+  expect(hook.onCompleted).toHaveBeenCalledOnce();
+  expect(api.completeWorkoutSession).not.toHaveBeenCalled();
+});
+
+it("cancels scheduled verification reads on unmount", async () => {
+  let requestSignal: AbortSignal | undefined;
+  vi.mocked(api.getWorkoutSessionResult).mockImplementation(
+    (_sessionId, signal) =>
+      new Promise((_resolve, reject) => {
+        requestSignal = signal;
+        signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+      }),
+  );
+  const hook = setup();
+  const socket = await start(hook);
+  await act(async () => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
+  expect(requestSignal?.aborted).toBe(false);
+  hook.unmount();
+  expect(requestSignal?.aborted).toBe(true);
+  await act(async () => vi.advanceTimersByTimeAsync(10000));
+  expect(api.getWorkoutSessionResult).toHaveBeenCalledOnce();
+  expect(hook.onCompleted).not.toHaveBeenCalled();
+  expect(socket.readyState).toBe(Socket.CLOSED);
+});
+
+it("rechecks a lost POST response without resending completion on rapid retries", async () => {
+  const workout = { ...session(), mode: "WORKOUT" as const, measurementGroupId: null };
+  vi.mocked(api.createWorkoutSession).mockResolvedValue(workout);
+  vi.mocked(api.completeWorkoutSession).mockRejectedValue(new Error("POST response lost"));
+  vi.mocked(api.getWorkoutSessionResult).mockRejectedValue(new Error("GET unavailable"));
+  const hook = setup("WORKOUT");
+  await start(hook);
+  await act(async () => hook.result.current.complete());
+  expect(hook.result.current.connectionState).toBe("error");
+  expect(hook.result.current.retryLabel).toBe("완료 상태 다시 확인");
+  vi.mocked(api.getWorkoutSessionResult).mockResolvedValue({ ...stored("COMPLETED"), ...workout });
+  await act(async () => {
+    hook.result.current.retry();
+    hook.result.current.retry();
+    await hook.result.current.complete();
+  });
+  expect(api.completeWorkoutSession).toHaveBeenCalledOnce();
+  expect(hook.onCompleted).toHaveBeenCalledExactlyOnceWith(1, null);
+});
+
+it("keeps the same live session during a result API outage, without a new POST or socket", async () => {
+  const hook = setup();
+  const socket = await start(hook);
+  vi.mocked(api.getWorkoutSessionResult).mockRejectedValue(new Error("temporary outage"));
+  await act(async () => vi.advanceTimersByTimeAsync(9000));
+  expect(hook.result.current.connectionState).toBe("active");
+  expect(hook.result.current.connectionError).toBe("temporary outage");
+  vi.mocked(api.getWorkoutSessionResult).mockResolvedValue(stored("MEASURING"));
+  await act(async () => vi.advanceTimersByTimeAsync(3000));
+  expect(hook.result.current.connectionState).toBe("active");
+  act(() => hook.result.current.sendPoseFrame(poseFor("chair-stand")));
+  expect(socket.send).toHaveBeenCalledOnce();
+  expect(Socket.instances).toHaveLength(1);
+  expect(api.createWorkoutSession).toHaveBeenCalledOnce();
 });

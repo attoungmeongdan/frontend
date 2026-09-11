@@ -16,7 +16,7 @@ function AppLayout() {
       <div
         className={`bg-surface-default flex h-full w-full flex-col overflow-hidden ${fullViewport ? "" : "max-w-shell pt-[env(safe-area-inset-top)]"}`}
       >
-        {header !== false && (
+        {!fullViewport && header !== false && (
           <Header
             title={header.title}
             showBack={header.showBack}
@@ -28,7 +28,7 @@ function AppLayout() {
 
         <main
           className={
-            fullBleed
+            fullViewport || fullBleed
               ? "min-h-0 flex-1 overflow-hidden"
               : "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-1.5 pb-3"
           }
@@ -36,7 +36,7 @@ function AppLayout() {
           <Outlet />
         </main>
 
-        {bottomNav && <BottomNavigation />}
+        {!fullViewport && bottomNav && <BottomNavigation />}
       </div>
     </div>
   );

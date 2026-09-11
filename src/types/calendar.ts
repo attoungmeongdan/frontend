@@ -13,10 +13,10 @@ export interface DailyExercise {
   /** 그날 수행한 자유 운동 종목 수 (0~4) */
   count: number;
   /**
-   * 그날 완료한 체력 측정 id. 측정하지 않았으면 null.
-   * 측정만 하고 자유 운동을 하지 않은 날은 달력에 표시하지 않는다.
+   * 그날 완료한 체력 측정 그룹 UUID. 측정하지 않았으면 null.
+   * 자유 운동 없이 측정만 완료한 날에도 값이 있다.
    */
-  measurementId: string | null;
+  measurementGroupId: string | null;
 }
 
 /** 조회한 달의 운동 기록 */
@@ -33,7 +33,7 @@ export interface MonthlyActivity {
   joinedDay: number | null;
   /** 실행률 분모. 이번 달이면 오늘까지 경과일, 지난달이면 그 달 전체 일수 */
   totalTargetDays: number;
-  /** 운동한 날 목록 */
+  /** 자유 운동 또는 체력 측정 기록이 있는 날 목록 */
   exercisedDays: DailyExercise[];
 }
 
@@ -46,8 +46,8 @@ export interface DayCell {
   isBeforeJoin: boolean;
   /** 수행한 종목 수. 0 이면 그날 자유 운동을 하지 않았다 */
   exerciseCount: number;
-  /** 자유 운동과 체력 측정을 모두 한 날에만 값이 있다. 분석 화면으로 이동할 때 쓴다 */
-  measurementId: string | null;
+  /** 완료한 체력 측정 그룹 UUID. 자유 운동 여부와 독립적이며 분석 이동에 쓴다 */
+  measurementGroupId: string | null;
 }
 
 /** 이번 달 운동 실행률. 미래 날짜는 분모에서 제외한다 */

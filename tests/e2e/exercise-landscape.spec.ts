@@ -77,8 +77,8 @@ async function assertFrameAlignment(page: Page) {
   });
   expect(result.videoSize).toEqual(result.canvasSize);
   expect(result.video).toEqual(result.canvas);
-  // Both display the entire source frame, even when its aspect ratio differs from the screen.
-  expect(result.video.fit).toBe("contain");
+  // Both crop the source identically to fill the viewport without letterboxing.
+  expect(result.video.fit).toBe("cover");
   expect(result.video.scale).toBe("-1 1");
 }
 
