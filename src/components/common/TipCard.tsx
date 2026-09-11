@@ -6,7 +6,7 @@ interface TipCardProps {
   description: string;
 }
 
-// 온보딩 하단 서비스 소개 카드
+// 테두리를 파고드는 "Tip." 라벨이 달린 안내 카드
 function TipCard({ icon: Icon, title, description }: TipCardProps) {
   return (
     <div className="relative pt-2">
