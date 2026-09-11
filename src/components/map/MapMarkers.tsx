@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import type { FacilityMarker } from "@/apis/facility";
 import {
   CLUSTER_CALCULATOR,
+  CLUSTER_MIN_LEVEL,
   CLUSTER_STYLES,
   RADIUS_LABEL,
   SEARCH_RADIUS_METERS,
@@ -18,9 +19,6 @@ interface MapMarkersProps {
   selectedId: number | null;
   onSelect: (facilityId: number) => void;
 }
-
-/** 이 확대 수준보다 넓게 보면 마커를 묶는다 */
-const CLUSTER_MIN_LEVEL = 5;
 
 // 지도 위 마커. 집·공공시설 2종만 쓰고, 시설은 많아질 수 있어 클러스터로 묶는다
 function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersProps) {

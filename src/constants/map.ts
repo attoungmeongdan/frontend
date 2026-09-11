@@ -8,6 +8,15 @@ export const MAP_ZOOM_LEVEL = 8;
 
 export const RADIUS_LABEL = "반경 5km";
 
+/** 이 확대 수준보다 넓게 보면 마커를 묶는다 */
+export const CLUSTER_MIN_LEVEL = 5;
+
+/**
+ * 진입 시 랜덤으로 고른 시설을 보여줄 확대 레벨.
+ * CLUSTER_MIN_LEVEL 보다 작아야 고른 마커가 클러스터에 묶여 숨지 않는다
+ */
+export const FOCUS_ZOOM_LEVEL = CLUSTER_MIN_LEVEL - 1;
+
 /**
  * 클러스터 단계별 모양. 묶인 시설이 많을수록 진해진다.
  * 캘린더 운동 강도와 같은 색 램프를 써서 서비스 안에서 색 의미를 맞춘다.
@@ -48,6 +57,9 @@ export const SHEET_FIELD_LABELS = {
 } as const;
 
 export const SHEET_CLOSE_LABEL = "닫기";
+
+/** 진입 시 랜덤으로 고른 시설 시트 위에 꾸북이가 건네는 말 */
+export const RECOMMEND_MESSAGE = "여기는 어때요?";
 
 /** 시설명 옆 거리 표기 접두어. "집에서 1.2km" */
 export const SHEET_DISTANCE_PREFIX = "집에서";
