@@ -25,22 +25,22 @@ export interface MeasurementProgress {
   completed: boolean;
 }
 
-export interface MeasurementExerciseValue {
-  value: number;
-  unit: "COUNT" | "SECOND";
-}
+export type MeasurementHistoryKey = "chairStand" | "sitUp" | "pushUp" | "plank";
 
 export interface MeasurementRecord {
   measurementGroupId: string;
   measuredAt: string;
-  totalScore: number;
-  exercises: Partial<Record<ApiExerciseType, MeasurementExerciseValue>>;
+  value: number;
+  unit: "COUNT" | "SECOND";
 }
 
-export interface MeasurementHistory {
+export interface MeasurementSeries {
+  /** 오늘 완료 기록이 없으면 null */
   today: MeasurementRecord | null;
   previousMeasurements: MeasurementRecord[];
 }
+
+export type MeasurementHistory = Record<MeasurementHistoryKey, MeasurementSeries>;
 
 /** 동연령대 평균 대비 서버 비교 코드 */
 export type WorkoutComparison = "LOW" | "SIMILAR" | "HIGH";
