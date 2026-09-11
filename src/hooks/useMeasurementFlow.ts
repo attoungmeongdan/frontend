@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isAxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import {
@@ -96,7 +97,7 @@ export function useMeasurementFlow() {
     cacheProgress(progress);
     if (progress.completed) {
       applyProgress(progress);
-      throw new Error("오늘 측정이 이미 완료됐어요.");
+      return null;
     }
     const restarting =
       restartGroupRef.current !== null && restartGroupRef.current === progress.measurementGroupId;
@@ -104,19 +105,43 @@ export function useMeasurementFlow() {
       const position = getMeasurementPosition(progress);
       if (position.stepIndex !== stepIndex) {
         applyProgress(progress);
-        throw new Error("저장된 진행 상태가 변경됐어요. 안내를 다시 확인해 주세요.");
+        return null;
       }
     }
     // Both endpoints create a session/ticket immediately. Call only after start-pose detection.
-    const session = restarting
-      ? await restartMeasurementSession()
-      : progress.measurementGroupId && continuationGroupRef.current !== progress.measurementGroupId
-        ? await resumeMeasurementSession()
-        : await createWorkoutSession(
-            MEASUREMENT_ORDER[stepIndex],
-            progress.measurementGroupId ?? undefined,
-            "MEASUREMENT",
-          );
+    let session;
+    try {
+      session = restarting
+        ? await restartMeasurementSession()
+        : progress.measurementGroupId &&
+            continuationGroupRef.current !== progress.measurementGroupId
+          ? await resumeMeasurementSession()
+          : await createWorkoutSession(
+              MEASUREMENT_ORDER[stepIndex],
+              progress.measurementGroupId ?? undefined,
+              "MEASUREMENT",
+            );
+    } catch (cause) {
+      if (generation !== generationRef.current) throw cause;
+      const code: unknown = isAxiosError(cause) ? cause.response?.data?.code : null;
+      if (["FITNESS_409_4", "FITNESS_409_5", "FITNESS_409_7"].includes(String(code))) {
+        // The server may complete the previous runtime while creating a session.
+        // Re-read persisted progress instead of repeatedly requesting the stale exercise.
+        const latest = await getMeasurementProgress();
+        if (generation !== generationRef.current) throw cause;
+        const position = getMeasurementPosition(latest);
+        if (
+          latest.completed ||
+          position.stepIndex !== stepIndex ||
+          latest.measurementGroupId !== progress.measurementGroupId
+        ) {
+          continuationGroupRef.current = null;
+          applyProgress(latest);
+          return null;
+        }
+      }
+      throw cause;
+    }
     if (generation !== generationRef.current) return session;
     restartGroupRef.current = null;
     continuationGroupRef.current = null;

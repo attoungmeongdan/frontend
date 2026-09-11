@@ -1,7 +1,8 @@
+import { MEASUREMENT_ORDER } from "@/constants/measurementOrder";
 import type { MeasurementProgress } from "@/types/exercise";
 
 export const MEASUREMENT_PROGRESS_KEY = ["measurement-progress"] as const;
-export const MEASUREMENT_ORDER = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"] as const;
+export { MEASUREMENT_ORDER } from "@/constants/measurementOrder";
 
 /** Only persisted, consecutive results establish a resume point. Never silently reorder exercises. */
 export function getMeasurementPosition(progress: MeasurementProgress) {

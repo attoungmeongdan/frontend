@@ -245,3 +245,64 @@ describe("measurement completion and recovery", () => {
     expect(next.url).toContain("ticket-2");
   });
 });
+
+it.each(["MEASUREMENT", "WORKOUT"] as const)(
+  "%s sends 15fps with 20/30/60fps pose input even when the server advertises 10fps",
+  async (mode) => {
+    vi.mocked(api.createWorkoutSession).mockResolvedValue({
+      ...session(),
+      mode,
+      measurementGroupId: mode === "WORKOUT" ? null : "group-1",
+      transmissionFps: 10,
+    });
+    const hook = setup(mode);
+    const socket = await start(hook);
+    const clock = vi.spyOn(performance, "now");
+    for (const inputFps of [20, 30, 60]) {
+      socket.send.mockClear();
+      const base = inputFps * 100_000;
+      act(() => {
+        for (let index = 0; index < inputFps * 10; index++) {
+          clock.mockReturnValue(base + (index * 1000) / inputFps);
+          hook.result.current.sendPoseFrame(poseFor("chair-stand"));
+        }
+      });
+      expect(socket.send).toHaveBeenCalledTimes(150);
+      const frames = socket.send.mock.calls.map(([data]) => JSON.parse(data));
+      expect(
+        frames.every(
+          (frame, index) =>
+            index === 0 ||
+            (frame.sequence === frames[index - 1].sequence + 1 &&
+              frame.timestamp > frames[index - 1].timestamp),
+        ),
+      ).toBe(true);
+    }
+    expect(hook.result.current.diagnostics.transmissionFps).toBe(15);
+    clock.mockRestore();
+  },
+);
+
+it("does not duplicate missing frames or burst after backpressure and a long pause", async () => {
+  const hook = setup();
+  const socket = await start(hook);
+  const clock = vi.spyOn(performance, "now").mockReturnValue(1000);
+  const points = poseFor("chair-stand");
+  act(() => hook.result.current.sendPoseFrame(points));
+  socket.bufferedAmount = 100_000;
+  clock.mockReturnValue(2000);
+  act(() => hook.result.current.sendPoseFrame(points));
+  socket.bufferedAmount = 0;
+  act(() => hook.result.current.sendPoseFrame([]));
+  expect(socket.send).toHaveBeenCalledTimes(1);
+  clock.mockReturnValue(10_000);
+  act(() => {
+    for (let i = 0; i < 100; i++) hook.result.current.sendPoseFrame(points);
+  });
+  expect(socket.send).toHaveBeenCalledTimes(2);
+  act(() => hook.result.current.cancel());
+  clock.mockReturnValue(11_000);
+  act(() => hook.result.current.sendPoseFrame(points));
+  expect(socket.send).toHaveBeenCalledTimes(2);
+  clock.mockRestore();
+});
