@@ -11,6 +11,7 @@ import MascotModal from "@/components/ui/MascotModal";
 import { getMeasurementProgress, resumeMeasurementSession } from "@/apis/exerciseSessions";
 import { EXERCISES, type ExerciseType } from "@/constants/exercises";
 import { MEASURE_STEPS } from "@/constants/measure";
+import { useBodyGuideVoice, useCountVoice, useDurationVoice } from "@/hooks/useExerciseVoice";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
@@ -71,6 +72,18 @@ function MeasurePage() {
     [observeStartPose, sendPoseFrame],
   );
   const camera = usePoseCamera({ onPoseFrame: handlePoseFrame });
+
+  // 측정도 같은 규칙이다. 플랭크 단계만 시간을 읽고 나머지 세 단계는 횟수를 읽는다
+  const isMeasuring = phase === "measuring" && session.connectionState === "active";
+  const isTimedStep = step?.valueKind === "timer";
+  useCountVoice(session.analysis?.validCount, isMeasuring && !isTimedStep);
+  useDurationVoice(session.analysis?.validDurationMs, isMeasuring && isTimedStep);
+
+  // 안내 모달이 떠 있는 intro 단계에서는 말하지 않는다
+  const canGuideBody =
+    (phase === "ready" || phase === "measuring") &&
+    (session.connectionState === "idle" || session.connectionState === "active");
+  useBodyGuideVoice(camera.state === "no-body", canGuideBody);
   const startCamera = camera.start;
   const stopCamera = camera.stop;
   const cameraReady =
