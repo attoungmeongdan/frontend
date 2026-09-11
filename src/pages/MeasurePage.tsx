@@ -156,7 +156,13 @@ function MeasurePage() {
       </div>
     );
   else if (phase === "pose-waiting" && session.connectionState === "idle")
-    overlay = <StartPoseGuide exerciseType={step.exercise} isMatching={startPose.isMatching} />;
+    overlay = (
+      <StartPoseGuide
+        mode="MEASUREMENT"
+        exerciseType={step.exercise}
+        isMatching={startPose.isMatching}
+      />
+    );
   else if (session.connectionState === "connecting" || session.connectionState === "completing")
     overlay = (
       <div className="bg-camera-overlay absolute inset-0 z-30 flex items-center justify-center">

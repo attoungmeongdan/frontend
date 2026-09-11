@@ -2,6 +2,7 @@ import turtleChairStand from "@/assets/mascots/turtle-exercise-chair-stand.png";
 import turtlePlank from "@/assets/mascots/turtle-exercise-plank.png";
 import turtlePushUp from "@/assets/mascots/turtle-exercise-push-up.png";
 import turtleSitUp from "@/assets/mascots/turtle-exercise-sit-up.png";
+import { getExerciseContent } from "@/constants/exerciseContent";
 import { MEASUREMENT_EXERCISES } from "@/constants/measurementOrder";
 import type { ExerciseType } from "@/constants/exercises";
 import type { MeasureStep } from "@/types/measure";
@@ -9,7 +10,7 @@ import type { MeasureStep } from "@/types/measure";
 // 체력 측정 4단계. 순서가 곧 진행 순서다
 const STEP_DETAILS: Record<ExerciseType, Omit<MeasureStep, "exercise">> = {
   "chair-stand": {
-    name: "의자앉았다일어나기",
+    name: getExerciseContent("chair-stand", "MEASUREMENT").name,
     flow: "timed",
     valueKind: "count",
     mascot: turtleChairStand,
