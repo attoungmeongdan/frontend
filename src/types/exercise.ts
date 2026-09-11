@@ -42,6 +42,23 @@ export interface MeasurementHistory {
   previousMeasurements: MeasurementRecord[];
 }
 
+/** 동연령대 평균 대비 서버 비교 코드 */
+export type WorkoutComparison = "LOW" | "SIMILAR" | "HIGH";
+
+/** 자유 운동(WORKOUT) 완료 세션의 결과·동연령대 평균 분석 */
+export interface WorkoutAnalysis {
+  sessionId: number;
+  exerciseType: ApiExerciseType;
+  measuredAt: string;
+  measuredValue: number;
+  /** 비교 기준 평균. 없으면 null 이며 0 으로 대체하지 않는다 */
+  averageValue: number | null;
+  unit: "COUNT" | "SECOND";
+  achievementRate: number | null;
+  comparison: WorkoutComparison | null;
+  comparisonMessage: string | null;
+}
+
 /** 동연령대 평균 대비 비교 등급. 프론트에서 계산하지 않고 서버 값을 그대로 쓴다 */
 export type ComparisonLevel = "LOW" | "SIMILAR" | "HIGH";
 
