@@ -7,8 +7,8 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import turtleCelebrate from "@/assets/mascots/turtle-celebrate.webp";
-import turtleGuide from "@/assets/mascots/turtle-guide.webp";
+import turtleCelebrate from "@/assets/mascots/turtle-celebrate.png";
+import turtleGuide from "@/assets/mascots/turtle-guide.png";
 
 export type OnboardingStepId = "name" | "age" | "gender" | "address" | "height" | "weight";
 

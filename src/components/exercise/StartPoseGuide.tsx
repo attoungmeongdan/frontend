@@ -1,7 +1,7 @@
-import chairStandGuide from "@/assets/exercises/guide-chair-stand.webp";
-import plankGuide from "@/assets/exercises/guide-plank.webp";
-import pushUpGuide from "@/assets/exercises/guide-push-up.webp";
-import sitUpGuide from "@/assets/exercises/guide-sit-up.webp";
+import chairStandGuide from "@/assets/exercises/guide-chair-stand.png";
+import plankGuide from "@/assets/exercises/guide-plank.png";
+import pushUpGuide from "@/assets/exercises/guide-push-up.png";
+import sitUpGuide from "@/assets/exercises/guide-sit-up.png";
 import type { ExerciseType } from "@/constants/exercises";
 
 interface StartPoseGuideProps {

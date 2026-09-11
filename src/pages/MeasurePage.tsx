@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import turtleGuide from "@/assets/mascots/turtle-guide.webp";
+import turtleGuide from "@/assets/mascots/turtle-guide.png";
 import CameraStage, { type CameraWarning } from "@/components/exercise/CameraStage";
 import CameraStatusScreen from "@/components/exercise/CameraStatusScreen";
 import PoseCameraFeed from "@/components/exercise/PoseCameraFeed";

@@ -1,6 +1,6 @@
 import { ArrowLeft, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import wordmark from "@/assets/logo/fittle-wordmark.webp";
+import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
 
 type HeaderProps = HeaderConfig & {
