@@ -1,47 +1,35 @@
 import { LogOut, TriangleAlert } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import turtleSad from "@/assets/mascots/turtle-sad.png";
 import PersonalInfoList from "@/components/mypage/PersonalInfoList";
 import ProfileError from "@/components/mypage/ProfileError";
 import ProfileSkeleton from "@/components/mypage/ProfileSkeleton";
 import ProfileSummary from "@/components/mypage/ProfileSummary";
+import ToastHost from "@/components/common/ToastHost";
 import RecommendationSection from "@/components/mypage/RecommendationSection";
 import Button from "@/components/ui/Button";
 import MascotModal from "@/components/ui/MascotModal";
-import Toast from "@/components/ui/Toast";
 import { ACCOUNT_ACTIONS, WITHDRAW_CONFIRM } from "@/constants/mypage";
 import { useAccountActions, useMyProfile } from "@/hooks/useMyPage";
 import { usePersonalInfoEdit } from "@/hooks/usePersonalInfoEdit";
 import { useRecommendations } from "@/hooks/useRecommendations";
+import { useToast } from "@/hooks/useToast";
 import { toPersonalInfoItems } from "@/utils/user";
 
-const TOAST_DURATION = 3000;
+const TOAST_DURATION_MS = 3_000;
 
-// 10_Mypage — /mypage
 function MyPage() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  // 사라질 때 페이드를 주려면 opacity 를 먼저 0 으로 만든 뒤 전환이 끝나고 내려야 한다
-  const [isToastVisible, setIsToastVisible] = useState(false);
+  const toast = useToast(TOAST_DURATION_MS);
 
   const profileQuery = useMyProfile();
-  const { logoutMutation, withdrawMutation } = useAccountActions({ onError: setToastMessage });
+  const { logoutMutation, withdrawMutation } = useAccountActions({ onError: toast.show });
   const personalInfoEdit = usePersonalInfoEdit({
     profile: profileQuery.data,
-    onError: setToastMessage,
+    onError: toast.show,
   });
 
   const recommendation = useRecommendations();
-
-  useEffect(() => {
-    if (toastMessage === null) return;
-
-    setIsToastVisible(true);
-
-    const timer = setTimeout(() => setIsToastVisible(false), TOAST_DURATION);
-
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
 
   const handleWithdraw = () => {
     setIsWithdrawOpen(false);
@@ -118,24 +106,12 @@ function MyPage() {
         />
       )}
 
-      {toastMessage && (
-        <div
-          onTransitionEnd={() => {
-            if (!isToastVisible) setToastMessage(null);
-          }}
-          className={`pointer-events-none fixed inset-x-0 bottom-[134px] z-50 flex justify-center px-5 transition-opacity duration-500 motion-reduce:transition-none ${
-            isToastVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <div className="w-full max-w-[378px]">
-            <Toast
-              message={toastMessage}
-              icon={TriangleAlert}
-              iconClassName="text-feedback-error"
-            />
-          </div>
-        </div>
-      )}
+      <ToastHost
+        message={toast.message}
+        size="default"
+        icon={TriangleAlert}
+        iconClassName="text-feedback-error"
+      />
     </div>
   );
 }

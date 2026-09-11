@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ExerciseType } from "@/constants/exercises";
-import type { PoseLandmarkPayload } from "@/types/exercise";
+import type { PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 import { matchesExerciseStartPose } from "@/utils/startPose";
 
 const REQUIRED_CONSECUTIVE_FRAMES = 3;
@@ -32,10 +32,10 @@ export function useStartPoseDetection({
   }, [enabled, exerciseType]);
 
   const observe = useCallback(
-    (landmarks: PoseLandmarkPayload[]) => {
+    (landmarks: PoseLandmarkPayload[], frameSize: PoseFrameSize) => {
       if (!enabled || detectedRef.current) return;
 
-      const matches = matchesExerciseStartPose(exerciseType, landmarks);
+      const matches = matchesExerciseStartPose(exerciseType, landmarks, frameSize);
       setIsMatching((current) => (current === matches ? current : matches));
       streakRef.current = matches ? streakRef.current + 1 : 0;
 

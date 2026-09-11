@@ -6,6 +6,8 @@ export interface HeaderConfig {
   showBack?: boolean;
   /** 우측 닫기 버튼 노출 여부. 결과 화면을 닫고 홈으로 이동 */
   showClose?: boolean;
+  /** 우측 프로필 버튼 노출 여부. 마이페이지 진입점이다. showClose 와 자리를 공유하므로 함께 켜지 않는다 */
+  showProfile?: boolean;
   /** 뒤로가기 목적지. 없으면 history back */
   backTo?: string;
 }

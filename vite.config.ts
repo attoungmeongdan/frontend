@@ -39,6 +39,16 @@ export default defineConfig({
             handler: "StaleWhileRevalidate",
             options: { cacheName: "assets" },
           },
+          {
+            // 운동 카운트 음성. 한 번 받으면 바뀌지 않으므로 캐시를 먼저 본다.
+            // fetch 로 미리 받을 때는 destination 이 비어 있어 경로로 판별한다
+            urlPattern: ({ url }) => url.pathname.startsWith("/voice/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "voice",
+              expiration: { maxEntries: 64 },
+            },
+          },
         ],
       },
     }),

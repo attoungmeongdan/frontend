@@ -1,5 +1,5 @@
-import { ArrowLeft, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, UserRound, X } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
 
@@ -7,7 +7,14 @@ type HeaderProps = HeaderConfig & {
   onBack?: () => void;
 };
 
-function Header({ title, showBack = false, showClose = false, backTo, onBack }: HeaderProps) {
+function Header({
+  title,
+  showBack = false,
+  showClose = false,
+  showProfile = false,
+  backTo,
+  onBack,
+}: HeaderProps) {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -48,7 +55,7 @@ function Header({ title, showBack = false, showClose = false, backTo, onBack }: 
         )}
 
         <div className="flex size-11 items-center justify-center">
-          {showClose && (
+          {showClose ? (
             <button
               type="button"
               aria-label="닫고 홈으로 돌아가기"
@@ -57,6 +64,22 @@ function Header({ title, showBack = false, showClose = false, backTo, onBack }: 
             >
               <X size={24} aria-hidden />
             </button>
+          ) : (
+            showProfile && (
+              <NavLink
+                to="/mypage"
+                aria-label="마이페이지"
+                className="flex size-11 items-center justify-center"
+              >
+                {({ isActive }) => (
+                  <UserRound
+                    size={24}
+                    aria-hidden
+                    className={isActive ? "text-brand-teal" : "text-text-primary"}
+                  />
+                )}
+              </NavLink>
+            )
           )}
         </div>
       </div>

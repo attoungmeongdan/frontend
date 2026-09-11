@@ -38,3 +38,19 @@ export function clearAccessToken() {
   accessToken = null;
   sessionId += 1;
 }
+
+type SessionExpiredListener = () => void;
+let expiredListeners: SessionExpiredListener[] = [];
+
+export function onSessionExpired(listener: SessionExpiredListener) {
+  expiredListeners.push(listener);
+
+  return () => {
+    expiredListeners = expiredListeners.filter((item) => item !== listener);
+  };
+}
+
+export function expireSession() {
+  clearAccessToken();
+  expiredListeners.forEach((listener) => listener());
+}

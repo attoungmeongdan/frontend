@@ -7,10 +7,11 @@ import PoseCameraFeed from "@/components/exercise/PoseCameraFeed";
 import StartPoseGuide from "@/components/exercise/StartPoseGuide";
 import Button from "@/components/ui/Button";
 import { EXERCISES, type Exercise, type ExerciseType } from "@/constants/exercises";
+import { useBodyGuideVoice, useCountVoice, useDurationVoice } from "@/hooks/useExerciseVoice";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import type { PoseLandmarkPayload } from "@/types/exercise";
+import type { PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 function formatElapsedTime(milliseconds: number) {
   const totalSeconds = Math.floor(milliseconds / 1_000);
@@ -44,13 +45,23 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
   });
   const observeStartPose = startPose.observe;
   const handlePoseFrame = useCallback(
-    (landmarks: PoseLandmarkPayload[]) => {
-      observeStartPose(landmarks);
+    (landmarks: PoseLandmarkPayload[], frameSize: PoseFrameSize) => {
+      observeStartPose(landmarks, frameSize);
       sendPoseFrame(landmarks);
     },
     [observeStartPose, sendPoseFrame],
   );
   const camera = usePoseCamera({ onPoseFrame: handlePoseFrame });
+
+  // 판정이 붙어 있는 동안만 읽어 준다. 플랭크는 30초 단위 경과 시간, 나머지는 횟수다
+  const isCounting = workout.connectionState === "active";
+  const isPlank = exercise.type === "plank";
+  useCountVoice(workout.analysis?.validCount, isCounting && !isPlank);
+  useDurationVoice(workout.analysis?.validDurationMs, isCounting && isPlank);
+
+  // 시작 자세를 기다리는 중에도 몸이 안 잡히면 알려 준다. 오류·저장 중에는 말하지 않는다
+  const canGuideBody = workout.connectionState === "idle" || workout.connectionState === "active";
+  useBodyGuideVoice(camera.state === "no-body", canGuideBody);
   const startCamera = camera.start;
   const stopCamera = camera.stop;
 
@@ -156,7 +167,7 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
       onCancel={moveHome}
       onEnd={isCameraReady && workout.connectionState === "active" ? workout.complete : undefined}
     >
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && new URLSearchParams(window.location.search).has("debugCamera") && (
         <output className="bg-camera-scrim text-caption absolute right-2 bottom-2 z-20 rounded-sm px-2 py-1 text-white/80">
           camera:{camera.diagnostics.cameraReady ? "ok" : "wait"} · model:
           {camera.diagnostics.modelReady ? "ok" : "wait"} · joints:

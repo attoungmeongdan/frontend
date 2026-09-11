@@ -3,6 +3,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import CalendarPage from "@/pages/CalendarPage";
 import ExerciseCompletePage from "@/pages/ExerciseCompletePage";
 import ExercisePage from "@/pages/ExercisePage";
+import GroupPage from "@/pages/GroupPage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import MapPage from "@/pages/MapPage";
@@ -65,7 +66,10 @@ export const router = createBrowserRouter([
           {
             path: "/",
             element: <HomePage />,
-            handle: { bottomNav: true } satisfies LayoutHandle,
+            handle: {
+              header: { showProfile: true },
+              bottomNav: true,
+            } satisfies LayoutHandle,
           },
           {
             path: "/exercise/:type",
@@ -101,10 +105,18 @@ export const router = createBrowserRouter([
             } satisfies LayoutHandle,
           },
           {
+            path: "/group",
+            element: <GroupPage />,
+            handle: {
+              header: { title: "그룹", showBack: true, backTo: "/", showProfile: true },
+              bottomNav: true,
+            } satisfies LayoutHandle,
+          },
+          {
             path: "/calendar",
             element: <CalendarPage />,
             handle: {
-              header: { title: "캘린더", showBack: true, backTo: "/" },
+              header: { title: "캘린더", showBack: true, backTo: "/", showProfile: true },
               bottomNav: true,
             } satisfies LayoutHandle,
           },
@@ -112,7 +124,7 @@ export const router = createBrowserRouter([
             path: "/map",
             element: <MapPage />,
             handle: {
-              header: { title: "지도", showBack: true, backTo: "/" },
+              header: { title: "지도", showBack: true, backTo: "/", showProfile: true },
               bottomNav: true,
               fullBleed: true,
             } satisfies LayoutHandle,

@@ -1,0 +1,39 @@
+.camera-stage {
+  display: grid;
+  grid-template:
+    "header" auto
+    "metrics" auto
+    "view" minmax(0, 1fr)
+    "footer" auto / minmax(0, 1fr);
+  gap: 8px;
+  padding-block: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-bottom));
+  padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+}
+
+.camera-stage-header {
+  grid-area: header;
+}
+
+.camera-stage-metrics {
+  grid-area: metrics;
+}
+
+.camera-stage-view {
+  grid-area: view;
+  min-width: 0;
+  min-height: 0;
+}
+
+.camera-stage-footer {
+  grid-area: footer;
+}
+
+@media (orientation: landscape) {
+  .camera-stage {
+    grid-template:
+      "header header" auto
+      "metrics view" minmax(0, 1fr)
+      "footer view" auto / minmax(180px, 30%) minmax(0, 1fr);
+    column-gap: 16px;
+  }
+}
