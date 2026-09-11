@@ -1,6 +1,5 @@
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, UserRound, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import ggubukLogo from "@/assets/logo/fittle-logo-ggubuk.png";
 import wordmark from "@/assets/logo/fittle-wordmark.png";
 import type { HeaderConfig } from "@/types/layout";
 
@@ -31,10 +30,7 @@ function Header({
   };
 
   return (
-    // 아이폰 노치·다이나믹 아일랜드 아래로 내리고, safe-area 가 없는 기기도 최소 8px 은 띄운다
-    // 높이 84px + 상단 8px = 92px 로 바텀 내비게이션(12 + 60 + 20)과 맞춘다
     <header className="bg-surface-default box-content flex h-21 shrink-0 flex-col justify-end px-2 pt-[max(8px,env(safe-area-inset-top))]">
-      {/* 버튼·제목 중심이 84px 의 48px 지점에 오도록 56px 행을 아래에서 8px 띄운다 */}
       <div className="mb-2 flex h-14 items-center justify-between">
         <div className="flex size-11 items-center justify-center">
           {showBack && (
@@ -73,14 +69,11 @@ function Header({
                 className="flex size-11 items-center justify-center"
               >
                 {({ isActive }) => (
-                  // 꾸북이를 원형 뱃지로 감싼다. 현재 위치일 때만 테두리를 브랜드 색으로 올린다
-                  <span
-                    className={`bg-surface-subtle flex size-9 items-center justify-center overflow-hidden rounded-full ring-1 ${
-                      isActive ? "ring-brand-teal" : "ring-border-default"
-                    }`}
-                  >
-                    <img src={ggubukLogo} alt="" aria-hidden className="size-7 object-contain" />
-                  </span>
+                  <UserRound
+                    size={24}
+                    aria-hidden
+                    className={isActive ? "text-brand-teal" : "text-text-primary"}
+                  />
                 )}
               </NavLink>
             )
