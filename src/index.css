@@ -38,13 +38,6 @@
 
   /* 입력 오류 피드백. 디자인상 빨강이 아니라 청록이다 (빨강은 결과 UI 전용) */
   --color-feedback-error: var(--color-brand-teal-strong);
-
-  /* 색 - 캘린더 운동 강도. 그날 수행한 자유 운동 종목 수(1~4)에 따라 진해진다.
-     1단계는 brand-mint, 4단계는 brand-teal-strong 이라 양 끝이 기존 색과 같다 */
-  --color-exercise-level-1: var(--color-brand-mint);
-  --color-exercise-level-2: #4fb396;
-  --color-exercise-level-3: #2e9a83;
-  --color-exercise-level-4: var(--color-brand-teal-strong);
   --color-field-border-strong: var(--color-text-secondary);
 
   /* 색 - 온보딩 Tip 카드 (투명도 섞인 값이라 별도 토큰)

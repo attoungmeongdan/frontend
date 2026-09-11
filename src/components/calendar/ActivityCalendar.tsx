@@ -1,32 +1,76 @@
-import { Check } from "lucide-react";
-import { LEGEND_EXERCISED_LABEL, LEGEND_TODAY_LABEL, WEEKDAY_LABELS } from "@/constants/calendar";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  LEGEND_EXERCISED_LABEL,
+  LEGEND_MEASURED_LABEL,
+  WEEKDAY_LABELS,
+} from "@/constants/calendar";
 import { MAX_EXERCISE_COUNT, type DayCell, type MonthlyActivity } from "@/types/calendar";
 import { buildMonthGrid } from "@/utils/calendar";
 
 interface ActivityCalendarProps {
   activity: MonthlyActivity;
+  onPrevMonth: () => void;
+  onNextMonth: () => void;
+  /** 이번 달을 보고 있으면 다음 달로 갈 수 없다. 미래 기록은 없다 */
+  canGoNext: boolean;
 }
 
-/** 수행 종목 수(1~4)별 배경색. 인덱스 0 은 쓰지 않는다 */
-const LEVEL_BACKGROUND = [
-  "",
-  "bg-exercise-level-1",
-  "bg-exercise-level-2",
-  "bg-exercise-level-3",
-  "bg-exercise-level-4",
-] as const;
+/** 게이지 채움과 남은 자리 색 */
+const GAUGE_COLOR = "#136b6b";
+const GAUGE_TRACK = "#dce7e5";
 
 const LEVELS = Array.from({ length: MAX_EXERCISE_COUNT }, (_, index) => index + 1);
 
+/** 수행 종목 수만큼 원을 채운다. 4종목이면 한 바퀴가 찬다 */
+function toGaugeBackground(exerciseCount: number) {
+  if (exerciseCount === 0) return undefined;
+
+  const filled = (exerciseCount / MAX_EXERCISE_COUNT) * 360;
+
+  return `conic-gradient(${GAUGE_COLOR} 0deg ${filled}deg, ${GAUGE_TRACK} ${filled}deg 360deg)`;
+}
+
 // Feature/ActivityCalendar (fcYja) — 당월 달력. 월 이동 없음
-function ActivityCalendar({ activity }: ActivityCalendarProps) {
+function ActivityCalendar({
+  activity,
+  onPrevMonth,
+  onNextMonth,
+  canGoNext,
+}: ActivityCalendarProps) {
+  const navigate = useNavigate();
   const weeks = buildMonthGrid(activity);
+
+  const openAnalysis = (measurementId: string) => {
+    navigate(`/measurements/${measurementId}/analysis`);
+  };
 
   return (
     <section className="border-border-default bg-surface-default rounded-input flex flex-col gap-3 border p-5">
-      <h2 className="text-text-primary text-[18px] leading-[26px] font-bold">
-        {activity.year}년 {activity.month}월
-      </h2>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onPrevMonth}
+          aria-label="이전 달 보기"
+          className="text-text-secondary flex size-8 items-center justify-center rounded-full"
+        >
+          <ChevronLeft size={20} aria-hidden />
+        </button>
+
+        <h2 className="text-text-primary text-[18px] leading-[26px] font-bold">
+          {activity.year}년 {activity.month}월
+        </h2>
+
+        <button
+          type="button"
+          onClick={onNextMonth}
+          disabled={!canGoNext}
+          aria-label="다음 달 보기"
+          className="text-text-secondary flex size-8 items-center justify-center rounded-full disabled:opacity-30"
+        >
+          <ChevronRight size={20} aria-hidden />
+        </button>
+      </div>
 
       <ul className="flex">
         {WEEKDAY_LABELS.map((label) => (
@@ -44,76 +88,102 @@ function ActivityCalendar({ activity }: ActivityCalendarProps) {
           <div key={weekIndex} className="flex">
             {week.map((cell, weekday) => (
               <div key={weekday} className="flex h-[42px] flex-1 items-center justify-center">
-                <DayMark cell={cell} />
+                <DayMark cell={cell} onOpenAnalysis={openAnalysis} />
               </div>
             ))}
           </div>
         ))}
       </div>
 
-      <ul className="flex items-center gap-4">
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <li className="flex items-center gap-1.5">
           <span className="flex items-center gap-1" aria-hidden>
             {LEVELS.map((level) => (
-              <span key={level} className={`size-3 rounded-full ${LEVEL_BACKGROUND[level]}`} />
+              <LegendGauge key={level} exerciseCount={level} />
             ))}
           </span>
           <span className="text-text-secondary text-caption">{LEGEND_EXERCISED_LABEL}</span>
         </li>
         <li className="flex items-center gap-1.5">
-          <span
-            className="bg-surface-default border-brand-teal-strong size-3 rounded-full border-2"
-            aria-hidden
-          />
-          <span className="text-text-secondary text-caption">{LEGEND_TODAY_LABEL}</span>
+          <span className="bg-action-orange size-2.5 rounded-full" aria-hidden />
+          <span className="text-text-secondary text-caption">{LEGEND_MEASURED_LABEL}</span>
         </li>
       </ul>
     </section>
   );
 }
 
-// 날짜 표시. 수행 종목 수가 많을수록 원이 진해지고, 오늘은 강조 테두리를 더한다
-function DayMark({ cell }: { cell: DayCell }) {
-  const { date, isToday, isFuture, exerciseCount } = cell;
+interface DayMarkProps {
+  cell: DayCell;
+  onOpenAnalysis: (measurementId: string) => void;
+}
+
+/**
+ * 날짜 표시.
+ * 배경색은 자유 운동 종목 수, 오렌지 테두리·체크는 그날 체력 측정까지 마쳤다는 뜻이다.
+ * 측정한 날은 눌러서 측정 분석 화면으로 갈 수 있다.
+ */
+function DayMark({ cell, onOpenAnalysis }: DayMarkProps) {
+  const { date, isToday, isFuture, exerciseCount, measurementId } = cell;
 
   if (date === null) return null;
 
+  const isMeasured = measurementId !== null;
   const todayLabel = isToday ? " 오늘" : "";
-  const label =
-    exerciseCount > 0 ? `${date}일 운동 ${exerciseCount}개${todayLabel}` : `${date}일${todayLabel}`;
-  const todayRing = isToday ? "border-brand-teal-strong border-2" : "";
+  const measuredLabel = isMeasured ? " 체력 측정 완료" : "";
+  // 운동·측정·오늘은 서로 독립이라 분기 대신 조각을 이어붙인다.
+  // 분기로 두면 측정만 한 날(count 0 + measured)에서 측정 정보가 빠진다
+  const exerciseLabel = exerciseCount > 0 ? ` 운동 ${exerciseCount}개` : "";
+  const label = `${date}일${exerciseLabel}${measuredLabel}${todayLabel}`;
 
-  if (exerciseCount > 0) {
-    return (
+  const numberTone = isToday
+    ? "text-action-orange font-bold"
+    : isFuture
+      ? "text-text-secondary/40"
+      : "text-text-primary";
+
+  const mark = (
+    <div className="relative flex size-9 cursor-default items-center justify-center select-none">
       <div
-        aria-label={label}
-        className={`flex size-9 flex-col items-center justify-center rounded-full ${LEVEL_BACKGROUND[exerciseCount]} ${todayRing}`}
+        className="flex size-9 items-center justify-center rounded-full"
+        style={{ background: toGaugeBackground(exerciseCount) }}
       >
-        <Check size={14} className="text-action-primary-fg" aria-hidden />
-        <span
-          className={`text-action-primary-fg text-[10px] leading-none ${
-            isToday ? "font-bold" : "font-semibold"
-          }`}
-        >
-          {date}
-        </span>
+        <div className="bg-surface-default flex size-7 items-center justify-center rounded-full">
+          <span className={`text-body-small ${numberTone}`}>{date}</span>
+        </div>
       </div>
+      {isMeasured && (
+        <span className="bg-action-orange border-surface-default absolute -top-1 -right-1 size-2.5 rounded-full border-2" />
+      )}
+    </div>
+  );
+
+  // 측정한 날만 분석 화면으로 갈 수 있다
+  if (isMeasured) {
+    return (
+      <button
+        type="button"
+        aria-label={`${label}, 측정 분석 보기`}
+        onClick={() => onOpenAnalysis(measurementId)}
+        className="cursor-pointer"
+      >
+        {mark}
+      </button>
     );
   }
 
+  return <div aria-label={label}>{mark}</div>;
+}
+
+/** 범례용 작은 게이지 */
+function LegendGauge({ exerciseCount }: { exerciseCount: number }) {
   return (
-    <div
-      aria-label={label}
-      className={`flex size-9 items-center justify-center rounded-full ${todayRing}`}
+    <span
+      className="flex size-4 items-center justify-center rounded-full"
+      style={{ background: toGaugeBackground(exerciseCount) }}
     >
-      <span
-        className={`text-body-small ${isFuture ? "text-text-secondary/40" : "text-text-primary"} ${
-          isToday ? "font-bold" : ""
-        }`}
-      >
-        {date}
-      </span>
-    </div>
+      <span className="bg-surface-default size-2.5 rounded-full" />
+    </span>
   );
 }
 

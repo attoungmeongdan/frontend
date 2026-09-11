@@ -1,4 +1,5 @@
 import { LoaderCircle, TriangleAlert } from "lucide-react";
+import { useState } from "react";
 import ActivityCalendar from "@/components/calendar/ActivityCalendar";
 import MonthlyRateCard from "@/components/calendar/MonthlyRateCard";
 import MascotSpeech from "@/components/common/MascotSpeech";
@@ -9,14 +10,29 @@ import {
   LOADING_MESSAGE,
   MASCOT_MESSAGES,
 } from "@/constants/calendar";
-import { CALENDAR_MOCK, CALENDAR_STATUS } from "@/mocks/calendar";
+import { CALENDAR_STATUS, getCalendarMock } from "@/mocks/calendar";
 import { calculateMonthlyRate, selectMascotMessage } from "@/utils/calendar";
+import { getSeoulToday } from "@/utils/date";
 
-// 08_Calendar — /calendar (당월만, 월 이동 없음)
+/** 연·월을 한 달 옮긴다. 12월 → 1월 처럼 해가 바뀌는 경우를 함께 처리한다 */
+function shiftMonth(year: number, month: number, delta: number) {
+  const shifted = new Date(year, month - 1 + delta, 1);
+
+  return { year: shifted.getFullYear(), month: shifted.getMonth() + 1 };
+}
+
+// 08_Calendar — /calendar
 function CalendarPage() {
   // API 연동 전이라 목데이터를 그대로 쓴다
   const status = CALENDAR_STATUS;
-  const activity = CALENDAR_MOCK;
+  const seoulToday = getSeoulToday();
+  const [view, setView] = useState({ year: seoulToday.year, month: seoulToday.month });
+
+  const isCurrentMonth = view.year === seoulToday.year && view.month === seoulToday.month;
+  const activity = getCalendarMock(view.year, view.month);
+
+  const goPrevMonth = () => setView((current) => shiftMonth(current.year, current.month, -1));
+  const goNextMonth = () => setView((current) => shiftMonth(current.year, current.month, 1));
 
   if (status === "loading") {
     return (
@@ -63,8 +79,17 @@ function CalendarPage() {
   return (
     <div className="flex flex-col gap-5">
       <MascotSpeech message={selectMascotMessage(activity)} />
-      <ActivityCalendar activity={activity} />
-      <MonthlyRateCard rate={calculateMonthlyRate(activity)} />
+      <ActivityCalendar
+        activity={activity}
+        onPrevMonth={goPrevMonth}
+        onNextMonth={goNextMonth}
+        canGoNext={!isCurrentMonth}
+      />
+      <MonthlyRateCard
+        rate={calculateMonthlyRate(activity)}
+        isCurrentMonth={isCurrentMonth}
+        month={view.month}
+      />
     </div>
   );
 }
