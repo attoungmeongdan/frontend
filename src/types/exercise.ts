@@ -89,7 +89,7 @@ export type ApiExerciseType = "CHAIR_STAND" | "SIT_UP" | "PUSH_UP" | "PLANK";
 export interface MeasurementProgress {
   measurementGroupId: string | null;
   completedExercises: ApiExerciseType[];
-  nextExerciseType: ApiExerciseType;
+  nextExerciseType: ApiExerciseType | null;
   completed: boolean;
 }
 

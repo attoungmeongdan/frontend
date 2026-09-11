@@ -6,6 +6,7 @@ import type { TrendSeries } from "@/components/home/TrendChart";
 import { EXERCISES } from "@/constants/exercises";
 import type { MeasurementHistory, MeasurementProgress, MeasurementRecord } from "@/types/exercise";
 import { getRecentSeoulDays } from "@/utils/date";
+import { MEASUREMENT_PROGRESS_KEY } from "@/utils/measurementProgress";
 
 /** 당일 측정 상태. 우선순위는 완료 > 재개 가능 > 새 측정 (화면정의서 기준) */
 export type MeasurementState = "new" | "resume" | "complete";
@@ -54,13 +55,19 @@ function toMeasurementState(progress?: MeasurementProgress): MeasurementState {
 }
 
 export function useMeasurementState() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["measurement-progress"],
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: MEASUREMENT_PROGRESS_KEY,
     queryFn: getMeasurementProgress,
-    staleTime: 60_000,
+    staleTime: 0,
   });
 
-  return { measurementState: toMeasurementState(data), isLoading };
+  return {
+    measurementState: toMeasurementState(data),
+    progress: data,
+    isLoading,
+    isError,
+    refetch,
+  };
 }
 
 function formatPointDate(measuredAt: string) {

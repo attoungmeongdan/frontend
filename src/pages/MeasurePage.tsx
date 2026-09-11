@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { LoaderCircle, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useBlocker, useNavigate } from "react-router-dom";
 import turtleGuide from "@/assets/mascots/turtle-guide.png";
 import CameraStage, { type CameraWarning } from "@/components/exercise/CameraStage";
 import CameraStatusScreen from "@/components/exercise/CameraStatusScreen";
@@ -8,58 +8,42 @@ import PoseCameraFeed from "@/components/exercise/PoseCameraFeed";
 import StartPoseGuide from "@/components/exercise/StartPoseGuide";
 import Button from "@/components/ui/Button";
 import MascotModal from "@/components/ui/MascotModal";
-import { getMeasurementProgress, resumeMeasurementSession } from "@/apis/exerciseSessions";
-import { EXERCISES, type ExerciseType } from "@/constants/exercises";
 import { MEASURE_STEPS } from "@/constants/measure";
+import { useMeasurementFlow } from "@/hooks/useMeasurementFlow";
+import turtleComplete from "@/assets/mascots/turtle-today-complete.png";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import type { ApiExerciseType, ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise";
+import type { ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise";
 
 const INTRO_BODY = "의자 앉았다 일어나기, 윗몸일으키기,\n팔굽혀펴기, 플랭크\n총 4단계로 진행돼요!";
 const formatTime = (ms: number) => {
   const seconds = Math.max(0, Math.ceil(ms / 1000));
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 };
-const toExercise = (type: ApiExerciseType): ExerciseType =>
-  EXERCISES.find((item) => item.apiType === type)?.type ?? "chair-stand";
-
 function MeasurePage() {
   const navigate = useNavigate();
-  const [stepIndex, setStepIndex] = useState(0);
-  const [phase, setPhase] = useState<"loading" | "intro" | "ready" | "measuring">("loading");
-  const [groupId, setGroupId] = useState<string | null>(null);
-  const [resume, setResume] = useState(false);
+  const flow = useMeasurementFlow();
+  const { phase, setPhase, stepIndex, groupId } = flow;
+  const navigatingRef = useRef(false);
   const step = MEASURE_STEPS[stepIndex];
-  const handleCompleted = useCallback(
-    (_: number, nextGroupId?: string | null) => {
-      setGroupId(nextGroupId ?? null);
-      setResume(false);
-      if (stepIndex === MEASURE_STEPS.length - 1 && nextGroupId)
-        navigate(`/measurements/${nextGroupId}/analysis`, { replace: true });
-      else {
-        setStepIndex((index) => index + 1);
-        setPhase("ready");
-      }
-    },
-    [navigate, stepIndex],
-  );
   const session = useWorkoutSession({
-    exerciseType: step?.exercise ?? "chair-stand",
+    exerciseType: step.exercise,
     mode: "MEASUREMENT",
-    measurementGroupId: groupId,
-    createSession: resume ? resumeMeasurementSession : undefined,
-    onCompleted: handleCompleted,
+    createSession: flow.createSession,
+    verifyCompletion: flow.verifyCompletion,
+    minimumPendingMs: 500,
+    onCompleted: flow.onCompleted,
   });
   const startSession = session.start;
   const sendPoseFrame = session.sendPoseFrame;
   const handleStartPoseDetected = useCallback(() => {
     setPhase("measuring");
     void startSession();
-  }, [startSession]);
+  }, [setPhase, startSession]);
   const startPose = useStartPoseDetection({
     exerciseType: step?.exercise ?? "chair-stand",
-    enabled: phase === "ready" && session.connectionState === "idle",
+    enabled: phase === "pose-waiting" && session.connectionState === "idle",
     onDetected: handleStartPoseDetected,
   });
   const observeStartPose = startPose.observe;
@@ -75,7 +59,23 @@ function MeasurePage() {
   const stopCamera = camera.stop;
   const cameraReady =
     camera.state === "normal" || camera.state === "no-body" || camera.state === "bad-pose";
-  const shouldStartCamera = phase !== "loading";
+  const shouldStartCamera = phase !== "loading" && phase !== "load-error" && phase !== "complete";
+  const busy =
+    phase === "loading" ||
+    session.connectionState === "connecting" ||
+    session.connectionState === "completing";
+  const analysisPath = groupId ? `/measurements/${groupId}/analysis` : null;
+  const blocker = useBlocker(({ nextLocation }) =>
+    phase === "complete" ? nextLocation.pathname !== analysisPath : busy,
+  );
+  useEffect(() => {
+    if (blocker.state === "blocked") blocker.reset();
+  }, [blocker]);
+  const moveToAnalysis = () => {
+    if (!analysisPath || navigatingRef.current) return;
+    navigatingRef.current = true;
+    navigate(analysisPath, { replace: true });
+  };
 
   useEffect(() => {
     if (!shouldStartCamera) return;
@@ -83,42 +83,34 @@ function MeasurePage() {
     return stopCamera;
   }, [shouldStartCamera, startCamera, stopCamera]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void getMeasurementProgress()
-      .then((value) => {
-        if (cancelled) return;
-        setGroupId(value.measurementGroupId);
-        if (value.completed && value.measurementGroupId) {
-          navigate(`/measurements/${value.measurementGroupId}/analysis`, { replace: true });
-          return;
-        }
-        const index = MEASURE_STEPS.findIndex(
-          (item) => item.exercise === toExercise(value.nextExerciseType),
-        );
-        setStepIndex(index >= 0 ? index : 0);
-        setResume(value.completedExercises.length > 0);
-        setPhase(value.completedExercises.length ? "ready" : "intro");
-      })
-      .catch(() => setPhase("intro"));
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate]);
-
   const moveHome = () => {
+    if (busy || phase === "complete" || navigatingRef.current) return;
+    navigatingRef.current = true;
     session.cancel();
     camera.stop();
     navigate("/");
   };
   const retrySession = () => {
-    if (session.shouldReacquireStartPose) setPhase("ready");
+    if (session.shouldReacquireStartPose) setPhase("pose-waiting");
     session.retry();
   };
-  if (phase === "loading" || !step)
+  if (phase === "loading" || phase === "load-error")
     return (
-      <div className="flex h-full items-center justify-center">
-        <LoaderCircle className="animate-spin" />
+      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+        {phase === "loading" ? (
+          <p role="status" className="flex items-center gap-2">
+            <LoaderCircle className="animate-spin" />
+            측정 준비 중이에요…
+          </p>
+        ) : (
+          <>
+            <p role="alert">{flow.error}</p>
+            <Button onClick={() => void flow.load()}>진행 상태 다시 확인</Button>
+            <Button variant="secondary" onClick={moveHome}>
+              홈으로 돌아가기
+            </Button>
+          </>
+        )}
       </div>
     );
 
@@ -139,7 +131,8 @@ function MeasurePage() {
         : String(session.analysis?.validCount ?? 0)
     : "—";
   let overlay = null;
-  if (!cameraReady)
+  if (phase === "complete" || phase === "intro" || phase === "guide") overlay = null;
+  else if (!cameraReady)
     overlay = (
       <div className="absolute inset-0 z-70">
         <CameraStatusScreen
@@ -149,7 +142,7 @@ function MeasurePage() {
         />
       </div>
     );
-  else if (phase === "ready" && session.connectionState === "idle")
+  else if (phase === "pose-waiting" && session.connectionState === "idle")
     overlay = <StartPoseGuide exerciseType={step.exercise} isMatching={startPose.isMatching} />;
   else if (session.connectionState === "connecting" || session.connectionState === "completing")
     overlay = (
@@ -159,7 +152,9 @@ function MeasurePage() {
           className="rounded-pill text-brand-teal-strong flex items-center gap-2 bg-white px-5 py-3 font-semibold"
         >
           <LoaderCircle size={20} className="animate-spin" />
-          기록을 저장하고 있어요…
+          {session.connectionState === "connecting"
+            ? "측정을 연결하고 있어요…"
+            : "기록을 저장하고 있어요…"}
         </p>
       </div>
     );
@@ -184,13 +179,15 @@ function MeasurePage() {
         valueKind={step.valueKind}
         subInfo={
           session.analysis && step.flow === "timed"
-            ? `남은 시간 ${formatTime(session.analysis.remainingTimeMs)}`
+            ? session.analysis.remainingTimeMs < 0
+              ? "시간제한 없음"
+              : `남은 시간 ${formatTime(session.analysis.remainingTimeMs)}`
             : feedback?.message
         }
         warning={warning}
         cameraFeed={<PoseCameraFeed videoRef={camera.videoRef} canvasRef={camera.canvasRef} />}
         overlay={overlay}
-        cancelDisabled={session.connectionState === "completing"}
+        cancelDisabled={busy || phase === "complete"}
         onCancel={moveHome}
       >
         {import.meta.env.DEV && (
@@ -206,7 +203,32 @@ function MeasurePage() {
           mascot={turtleGuide}
           title="같이 운동 수행 능력을 측정해볼까요?"
           body={INTRO_BODY}
-          primaryAction={{ label: "알겠어요", onClick: () => setPhase("ready") }}
+          primaryAction={{
+            label: "알겠어요",
+            onClick: () => setPhase((current) => (current === "intro" ? "guide" : current)),
+          }}
+          cameraLayout
+        />
+      )}
+      {phase === "guide" && (
+        <MascotModal
+          key={step.exercise}
+          mascot={step.mascot}
+          title={step.name}
+          body={`${step.readyBody}\n${stepIndex === 0 ? "30초 동안 측정해요." : step.flow === "timed" ? "1분 동안 측정해요." : "시간제한 없이 자세를 유지해요. 자세가 무너지면 측정이 끝나요."}`}
+          primaryAction={{
+            label: "준비됐어요",
+            onClick: () => setPhase((current) => (current === "guide" ? "pose-waiting" : current)),
+          }}
+          cameraLayout
+        />
+      )}
+      {phase === "complete" && (
+        <MascotModal
+          mascot={turtleComplete}
+          title="모든 측정을 마쳤어요!"
+          body={"네 종목의 기록이 모두 저장됐어요.\n측정 분석을 확인해 볼까요?"}
+          primaryAction={{ label: "측정 분석 보기", onClick: moveToAnalysis }}
           cameraLayout
         />
       )}
