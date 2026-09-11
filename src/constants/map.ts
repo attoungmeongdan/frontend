@@ -8,6 +8,19 @@ export const MAP_ZOOM_LEVEL = 8;
 
 export const RADIUS_LABEL = "반경 5km";
 
+/**
+ * 클러스터 단계별 모양. 묶인 시설이 많을수록 진해진다.
+ * 캘린더 운동 강도와 같은 색 램프를 써서 서비스 안에서 색 의미를 맞춘다.
+ */
+export const CLUSTER_STYLES = [
+  { size: 40, background: "#73c6ae" },
+  { size: 48, background: "#2e9a83" },
+  { size: 56, background: "#136b6b" },
+] as const;
+
+/** 위 단계를 나누는 기준. [10 미만, 30 미만, 그 이상] */
+export const CLUSTER_CALCULATOR = [10, 30] as const;
+
 export const MAP_MESSAGES = {
   loading: {
     title: "지도를 불러오고 있어요",
@@ -17,7 +30,7 @@ export const MAP_MESSAGES = {
     title: "5km 안에 공공 체육시설이 없어요",
     description: "제공 데이터 기준이에요.\n범위 밖 시설은 표시하지 않아요.",
   },
-  geocodeFailed: {
+  addressUnavailable: {
     title: "주소 위치를 찾지 못했어요",
     description: "온보딩에 저장한 주소를 확인한 뒤\n다시 시도해 주세요.",
     action: "다시 시도하기",
