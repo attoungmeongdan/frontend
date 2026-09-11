@@ -1,7 +1,13 @@
-import { Pencil } from "lucide-react";
+import { Check, LoaderCircle, Pencil } from "lucide-react";
+import { useEffect } from "react";
 import type { Gender } from "@/apis/auth";
 import PersonalInfoEditor from "@/components/mypage/PersonalInfoEditor";
-import type { EditableField, PersonalInfoItem } from "@/types/mypage";
+import {
+  PERSONAL_INFO_SAVED_CHECK_MS,
+  PERSONAL_INFO_SAVED_LABEL,
+  PERSONAL_INFO_SAVING_LABEL,
+} from "@/constants/mypage";
+import type { EditableField, PersonalInfoItem, SaveFeedback } from "@/types/mypage";
 
 interface EditingState {
   age: string;
@@ -16,9 +22,12 @@ interface PersonalInfoListProps {
   editingField: EditableField | null;
   editing: EditingState;
   isSaving: boolean;
+  /** 저장 중·완료 피드백. 해당 줄의 연필 자리에 스피너·체크를 보여 준다 */
+  saveFeedback: SaveFeedback | null;
   onStartEdit: (field: EditableField) => void;
   onCancelEdit: () => void;
   onSave: () => void;
+  onSaveFeedbackEnd: () => void;
   onChangeAge: (value: string) => void;
   onChangeGender: (value: Gender) => void;
   onChangeHeight: (value: string) => void;
@@ -34,11 +43,16 @@ function PersonalInfoList({
   editingField,
   editing,
   isSaving,
+  saveFeedback,
   onStartEdit,
   onCancelEdit,
   onSave,
+  onSaveFeedbackEnd,
   ...editorHandlers
 }: PersonalInfoListProps) {
+  // 저장 피드백이 보이는 동안 다른 줄 수정을 시작하면 피드백이 뒤섞이므로 막는다
+  const isLocked = editingField !== null || saveFeedback !== null;
+
   return (
     <dl className="border-border-default bg-surface-default flex w-full flex-col rounded-2xl border">
       {items.map(({ label, value, field }, index) => {
@@ -79,12 +93,14 @@ function PersonalInfoList({
               <span className="text-text-primary text-body">{value}</span>
               {field === null ? (
                 <Pencil size={16} className="text-text-secondary/40" aria-hidden />
+              ) : saveFeedback?.field === field ? (
+                <SaveFeedbackIcon phase={saveFeedback.phase} onEnd={onSaveFeedbackEnd} />
               ) : (
                 <button
                   type="button"
                   aria-label={`${label} 수정`}
                   onClick={() => onStartEdit(field)}
-                  disabled={editingField !== null}
+                  disabled={isLocked}
                   className="text-text-secondary flex items-center disabled:opacity-40"
                 >
                   <Pencil size={16} aria-hidden />
@@ -95,6 +111,36 @@ function PersonalInfoList({
         );
       })}
     </dl>
+  );
+}
+
+interface SaveFeedbackIconProps {
+  phase: SaveFeedback["phase"];
+  onEnd: () => void;
+}
+
+/** 연필 자리 피드백. 저장 중엔 스피너, 성공하면 체크를 잠깐 보여 준 뒤 부모가 연필로 되돌린다 */
+function SaveFeedbackIcon({ phase, onEnd }: SaveFeedbackIconProps) {
+  useEffect(() => {
+    if (phase !== "saved") return;
+
+    const timer = setTimeout(onEnd, PERSONAL_INFO_SAVED_CHECK_MS);
+
+    return () => clearTimeout(timer);
+  }, [phase, onEnd]);
+
+  return (
+    <span
+      role="status"
+      aria-label={phase === "saved" ? PERSONAL_INFO_SAVED_LABEL : PERSONAL_INFO_SAVING_LABEL}
+      className="text-brand-teal-strong flex items-center"
+    >
+      {phase === "saved" ? (
+        <Check size={16} aria-hidden />
+      ) : (
+        <LoaderCircle size={16} className="animate-spin" aria-hidden />
+      )}
+    </span>
   );
 }
 

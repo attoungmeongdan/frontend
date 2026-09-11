@@ -64,9 +64,11 @@ function MyPage() {
             editingField={personalInfoEdit.editingField}
             editing={personalInfoEdit.editing}
             isSaving={personalInfoEdit.isSaving}
+            saveFeedback={personalInfoEdit.saveFeedback}
             onStartEdit={personalInfoEdit.startEdit}
             onCancelEdit={personalInfoEdit.cancelEdit}
             onSave={personalInfoEdit.save}
+            onSaveFeedbackEnd={personalInfoEdit.endSaveFeedback}
             onChangeAge={personalInfoEdit.changeAge}
             onChangeGender={personalInfoEdit.changeGender}
             onChangeHeight={personalInfoEdit.changeHeight}
