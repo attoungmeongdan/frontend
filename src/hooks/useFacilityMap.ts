@@ -79,7 +79,9 @@ export function useFacilityMap(): FacilityMapResult {
   );
 
   useEffect(() => {
-    if (!home || map) return;
+    // 실패 상태에서 그대로 두면 setIsSdkFailed(true) 가 이 effect 를 다시 깨워 재시도가 무한히 돈다.
+    // retry() 가 isSdkFailed 를 내리면 의존성이 바뀌어 SDK 로드를 다시 시작한다
+    if (!home || map || isSdkFailed) return;
 
     let cancelled = false;
 
@@ -122,7 +124,7 @@ export function useFacilityMap(): FacilityMapResult {
     return () => {
       cancelled = true;
     };
-  }, [home, map]);
+  }, [home, map, isSdkFailed]);
 
   const retry = () => {
     setIsSdkFailed(false);
