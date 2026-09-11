@@ -65,6 +65,11 @@ function HomePage() {
   };
   const enterMeasurement = (restart: boolean) => {
     if (busyRef.current) return;
+    if (restart && !progress?.measurementGroupId) {
+      setCheckError(true);
+      setOpenModal(null);
+      return;
+    }
     busyRef.current = true;
     navigate("/measure", {
       state: restart ? { restartGroupId: progress?.measurementGroupId } : null,

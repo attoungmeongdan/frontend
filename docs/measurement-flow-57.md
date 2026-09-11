@@ -1,82 +1,47 @@
 # #57 측정 플로우 구현 및 검증
 
-## 기준
+## 현재 기준
 
-- 프론트 기준: `develop` 9708f32. PR #46은 d77fbf1로 병합된 상태에서 fast-forward pull 후 `fix/#57-measurement-flow` 생성.
-- 프론트 작업 트리 변경 없음 확인 후 시작. 별도 `code/Base_BE` 저장소의 사용자 README 변경은 수정하지 않음.
-- 백엔드 코드: `attoungmeongdan/backend` develop 8a8d1f8 (2026-09-11 확인).
-- 배포 `https://api.atmd.cloud/v3/api-docs`의 progress/resume/restart 경로와 응답 설명 확인.
+- 프론트: PR #82가 병합된 `develop` b3cc2d5를 PR #73에 반영했다.
+- 백엔드: `attoungmeongdan/backend` develop 7383c01의 측정 흐름·세션 서비스를 2026-09-12 확인했다. 소스 확인이며 배포 서버 실행 검증은 아니다.
+- #82는 가로 화면, 시작 자세의 영상 비율 보정, 완료 메시지 누락 복구, 새 세션/티켓 재시작을 담당한다. #73은 그 위에 종목 안내, 저장 검증, 재진입·처음부터 하기, 최종 완료 화면을 추가한다.
 
-## 구현
+## 통합한 동작
 
-`useMeasurementFlow`가 전체 안내 → 종목 안내 → 시작 자세 대기 → 측정 → 종목 안내/최종 완료 상태를 관리한다. 저장 중/저장 오류는 공통 `useWorkoutSession`의 상태를 재사용한다.
+`useMeasurementFlow`가 전체 안내 → 종목 안내 → 시작 자세 대기 → 측정 → 다음 종목 안내/최종 완료 상태를 관리한다. 공통 `useWorkoutSession`이 연결·결과 조회·오류 복구를 처리한다.
 
-- `MEASURE_STEPS`의 의자 → 팔굽 → 윗몸 → 플랭크 순서 및 기존 mascot/readyBody, `MascotModal`, `CameraStage` 재사용.
-- 카메라, MediaPipe full 모델, 시작 자세 3프레임 감지, 관절 송신은 기존 공통 훅을 사용한다. 프론트에는 횟수/유효 시간 판정기를 추가하지 않았다.
-- 진행 조회와 저장 확인 오류를 신규 측정으로 바꾸지 않는다. 완료된 종목 집합과 서버의 다음 종목이 목표 순서에 맞는지 검증한다.
-- 저장된 종목이 0개면 그룹이 존재해도 전체 안내부터 시작한다. 1/2/3개면 다음 종목 안내부터 복원한다.
-- `SESSION_COMPLETED` 수신 후 result의 COMPLETED, 세션/모드/종목/그룹 일치, progress의 해당 종목 저장을 확인한 후에만 다음 모달로 이동한다.
-- 처리 오류/열렸던 WebSocket 종료 시에도 먼저 저장 결과를 확인한다. EXPIRED/CANCELLED면 시작 자세를 다시 잡도록 한다. 이미 저장됐으면 정확한 다음 안내로 이동한다.
-- 의자 30초, 윗몸/팔굽 60초 안내. 시간 표시는 서버 `remainingTimeMs`, 플랭크는 `validDurationMs`를 사용한다. 로컬 시간 경과로 완료 처리하지 않는다.
-- 요청과 동시에 500ms 타이머를 시작한다. 로딩/연결/저장 확인 중 중복 동작과 앱 내 이동을 막고, 늦게 도착한 결과는 취소/언마운트 후 적용하지 않는다.
-- 완성된 그룹은 완료 모달을 표시하고 뒤로가기를 비활성화한다. React Router 이동도 분석 경로만 허용한다. 확인 시 분석 경로로 replace 이동한다. 브라우저 탭 닫기/외부 URL 이동까지 강제로 막지는 않으며, 새로고침하면 서버 완료 상태로 복구한다.
-- 단계가 변해도 카메라 스트림은 유지하고 전체 완료 시 해제한다.
-- 홈 임시 `?state` override 제거. 버튼 클릭 시 서버를 다시 조회해 신규/재개/오늘 완료를 결정한다. 재시작·종목 저장 후 측정 진행 캐시를 갱신한다.
-- WORKOUT 생성 요청에는 measurementGroupId를 넣지 않는다. WORKOUT 완료·취소는 측정 진행/이력 캐시를 변경하지 않는다.
+- 의자 → 팔굽 → 윗몸 → 플랭크 순서로 안내, 시작 자세, API 요청, 결과 카드를 통일한다.
+- #82의 카메라 프레임 크기 전달과 가로 화면 CSS를 유지한다. 프론트에서 횟수·유효 시간을 판정하지 않는다.
+- 완료 메시지 수신, 소켓 종료, 주기적 결과 조회 모두 세션/모드/종목/그룹 일치 및 `result.status === COMPLETED`를 확인한다. 이어서 `progress`에 해당 종목이 저장됐는지 확인한 후 다음 안내로 넘어간다.
+- 측정 중 3초 간격으로 결과를 조회한다. 완료 메시지를 받지 못해도 저장된 결과를 복구한다. `remainingTimeMs === 0`만으로 완료 처리하지 않는다. 0초 이후 네 번의 조회에도 저장되지 않거나 조회가 세 번 연속 실패하면 상태 확인 재시도를 제공한다.
+- EXPIRED/CANCELLED는 완료로 간주하지 않는다. 시작 자세를 다시 확인한 뒤 새 세션/티켓으로 같은 운동을 0회부터 재개한다. 이전 티켓으로 WebSocket을 다시 열지 않는다.
+- 세션 생성 콜백은 재시도에도 `useMeasurementFlow`를 거친다. 공통 훅이 `/resume`을 직접 호출해서 그룹·종목 검증을 우회하지 않는다.
+- 정상적으로 다음 운동을 시작할 때는 동일 그룹을 포함한 일반 세션 생성 API를 호출한다. 중단 후 재진입·만료 재시작에는 body 없는 `/measurement/resume`을 사용한다. 처음부터 하기는 `/measurement/restart`를 시작 자세 확인 후 한 번 호출한다.
+- 생성 응답을 검증한 뒤 상태·캐시에 저장한다. 잘못된 그룹/종목 응답, 중복된 저장 종목, 그룹 ID 없는 홈 재시작을 거부한다. 무효화된 진행 조회는 저장 성공으로 처리하지 않는다.
+- 저장된 종목이 0개면 전체 안내, 1/2/3개면 다음 종목 안내를 복원한다. 그룹이 있으면 첫 종목도 재개 대상이다. 진행 조회 실패를 새 측정으로 바꾸지 않는다.
+- 의자 30초, 팔굽/윗몸 60초, 플랭크 무제한 안내를 표시한다. 실제 값은 서버 `remainingTimeMs`와 `validDurationMs`를 사용한다.
+- 측정 로딩/연결/저장 확인은 최소 500ms 표시하며 느린 요청에 추가 지연을 붙이지 않는다. 자유 운동의 기본 0ms에는 타이머를 만들지 않는다.
+- 중복 시작/완료/재시도를 막고 취소·언마운트 후 늦은 응답을 무시한다. 단계별 안내 중 카메라는 유지하고 최종 완료 시 해제한다.
+- 최종 완료는 분석 경로로만 이동하며 홈·뒤로가기를 차단한다. 탭 종료나 외부 URL 이동까지 강제로 차단하지는 않는다.
+- WORKOUT은 측정 그룹과 측정 진행/이력 캐시를 변경하지 않는다. 재시작에는 일반 세션 생성 API를 쓴다.
 
-## 종목 순서
+## 완료 메시지 누락과 백엔드 확인
 
-[MeasurementSequence](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/MeasurementSequence.java)의 CHAIR_STAND → PUSH_UP → SIT_UP → PLANK를 따른다. 전체 설명, 종목별 안내와 mascot, 의자 정리 문구, 웹캠의 시작 자세·단계명, API 검증 순서, 재개 위치, 분석 결과 카드 순서를 모두 맞췄다.
+[ExerciseSessionService.cleanupExpiredSessions](https://github.com/attoungmeongdan/backend/blob/7383c019f74964a9d3dcb9b19425b82d1b20d5fb/src/main/java/com/atmd/backend/domain/fitness/service/ExerciseSessionService.java#L273)는 만료된 런타임의 제한시간이 지났으면 COMPLETED로 저장한다. 이 정리 경로와 `completeRuntime`/`finalizeRuntimeAfterCommit`에는 WebSocket 완료 메시지 송신이 없다. 메시지만 기다리는 화면은 서버 저장 후에도 남을 수 있으므로 결과 조회 복구가 필요하다. 실제 신고 건이 이 경로에서 발생했는지는 서버 로그와 실운동 재현이 필요하다.
 
-의자 저장 후 팔굽 안내, 의자·팔굽 저장 후 윗몸 안내, 세 종목 저장 후 플랭크 안내로 복원한다. 전체 플로우 테스트가 안내·카메라·API·분석 카드의 순서 일치를 확인한다. 종목 순서로 인한 기존 블로커는 해소됐다.
+## 검증
 
-## 남은 백엔드 계약상 제약 및 미검증 사항
+- `npm run test:unit`: **84개 통과**. 기존 두 PR의 회귀 테스트와 결합 동작 검증을 포함한다.
+- `PLAYWRIGHT_CHANNEL=chrome npx playwright test`: **22개 통과**. 가로/세로·회전·safe area, 완료 메시지 누락 후 4종목 안내와 최종 분석 이동, 첫 운동 재진입과 새 티켓 재시작을 확인했다.
+- `npm run build`, `npm run lint`, `npm run stylelint`: 통과. 기존 500kB chunk 경고는 유지된다.
+- 실제 저장을 확인하지 못하면 다음 종목으로 가지 않는지, 폴링도 progress 검증을 거치는지, 재시작도 생성 응답 검증을 거치는지 추가로 검증했다.
+- API/WebSocket/카메라 입력을 대체한 자동화 검증이다. 인증된 배포 서버에서 실제 운동·MediaPipe 추론·저장 및 분석 조회까지 완료한 검증은 아니다.
 
-### 1. 초기화와 첫 세션 생성이 결합됨
+## 남은 서버 계약과 실기기 확인
 
-[MeasurementFlowService.resume/restart](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/MeasurementFlowService.java)는 모두 `ExerciseSessionService.create`를 호출한다. restart는 기존 종목을 soft-delete하고 새 그룹/의자 세션/티켓까지 생성한다. 그룹만 초기화하는 API는 없다.
+아래는 프론트 충돌과 구분되는 서버 계약의 제약이다.
 
-따라서 홈에서 재시작 선택 시 해당 그룹 ID를 history state에 의도로 보관하고 1단계부터 표시하되, 실제 restart POST는 시작 자세 확인 시점에 호출한다. 같은 화면 새로고침에는 의도가 유지되며, 새 그룹으로 변경됐거나 오늘 완료됐으면 과거 의도를 적용하지 않는다. 성공 후 재시도/다음 종목에서는 restart를 다시 호출하지 않는다.
-
-**한계:** 재시작을 선택한 직후 1·2단계에서 나가면 서버의 이전 저장 기록이 아직 남는다. “선택 즉시 초기화”와 “자세 확인 전 세션 생성 금지”를 동시에 충족하려면 초기화 전용 API 또는 지연 세션 생성 계약이 필요하다. `restart` 자체에는 완료된 그룹 거부 검사도 없으므로 서버에서 트랜잭션 내 일일 완료 검사도 추가해야 한다. 프론트는 POST 직전 progress.completed를 확인한다.
-
-### 2. 자유 운동과 측정 런타임 정리의 서버 결합
-
-[ExerciseSessionService.create](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/domain/fitness/service/ExerciseSessionService.java)는 모드와 관계없이 사용자의 CREATED/MEASURING 세션 전체를 정리한다. 남아 있는 측정 런타임의 제한시간이 경과했다면 WORKOUT 생성 요청에서도 측정 세션을 COMPLETED로 저장할 수 있다. 프론트의 측정 API/캐시 분리만으로 서버 측 불변성까지 보장할 수 없다. 모드별 정리 정책과 취소 계약을 백엔드에서 보완해야 한다.
-
-### 3. 통신 중단/응답 유실의 한계
-
-[WebSocket handler](https://github.com/attoungmeongdan/backend/blob/8a8d1f8/src/main/java/com/atmd/backend/global/websocket/ExercisePoseWebSocketHandler.java)는 정상 close(1000)에는 만료 처리를 하지 않는다. 클라이언트 취소 시 4000으로 닫아 열린 세션을 EXPIRED로 정리하도록 했다. 완료 이벤트는 서버 트랜잭션 커밋 이후 전송되므로 완료 후 닫기에서 저장 결과를 되돌리지 않는다.
-
-REST 성공 응답이 유실되거나 소켓 연결 전에 탭이 닫힌 경우에는 해당 세션을 취소할 REST 계약이 없다. 생성 티켓 유효시간은 60초이며, 백엔드의 활성 세션 검사로 즉시 재시도가 409가 될 수 있다. POST 멱등성 키/생성 전 취소 API 없이 네트워크 유실 상황까지 세션 생성의 exactly-once를 보장하지 않는다. 다음 시도에서는 진행 상태를 다시 조회하므로 성공한 restart를 무조건 반복하지 않는다.
-
-## 검증 결과
-
-자동 검증은 `npm test`의 API/WebSocket/카메라 입력을 대체한 회귀 테스트다. 실제 MediaPipe/사용자 신체 동작이나 배포 서버 저장 성공을 의미하지 않는다.
-
-| 시나리오                     | 확인 결과                                                                                               |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 신규 1→11 전체 완료          | 백엔드 순서 mock 계약에서 확인; 인증된 실서버 전체 수행 미검증                                          |
-| 3단계 이탈 → 신규 1단계      | 저장 0개 그룹/이탈/재마운트 확인                                                                        |
-| 5/7/9단계 이탈 → 4/6/8단계   | 각 상태 진입·이탈·재마운트 확인                                                                         |
-| 각 재개 상태에서 처음부터    | 자세 감지 전 POST 없음, 감지 후 restart 1회 및 다음 종목 resume 확인; 실제 초기화는 시작 자세 감지 시점 |
-| 새로고침/뒤로가기/홈 재진입  | 메모리 라우터 재마운트·서버 재조회 및 완료 단계 뒤로가기 차단 확인                                      |
-| 자유 운동 시작/완료/취소     | 프론트 측정 캐시/진행 조회/재개/재시작 호출 불변 확인; 서버 정리 정책은 블로커                          |
-| 빠른/느린 로딩               | 20/500/1300ms 요청, 실패, 1200ms 저장 확인. 500ms 최소 및 느린 요청 추가 지연 없음                      |
-| 중복 이벤트/클릭, StrictMode | 세션 1회 생성·종목 저장 확인 1회·언마운트 후 늦은 응답 무시                                             |
-| 서버 시간/플랭크             | remainingTimeMs 표시, 로컬 90/180초 경과만으로 완료되지 않음, 서버 완료 이벤트 후 이동                  |
-| 세로/가로                    | 테스트 데이터 브라우저: 390×844, 844×390, 667×375에서 안내·카메라 픽토그램·완료 모달 확인               |
-| 최종 완료 → 분석             | 비활성 뒤로가기, 모달 닫기 없음, 분석 경로 replace 이동 확인                                            |
-
-### 코드 검사
-
-- `npm ci` 후 원본 develop 별도 복사본: build/ESLint/Stylelint 통과. 빌드의 500kB chunk 경고는 기존에도 발생.
-- 원본 develop 전체 Prettier: `.coderabbit.yaml` 실패. 이번 범위에서 수정하지 않음.
-- 변경 후 build/ESLint/Stylelint 및 변경 파일 Prettier, 테스트 결과는 PR 체크리스트 참조.
-- 초기 로컬 node_modules에 vite-plugin-pwa가 없어 빌드가 실패했으나 최신 lockfile로 npm ci 후 해소. develop 소스 오류로 분류하지 않음.
-
-### 실서버/실기기 미검증
-
-배포 OpenAPI 조회 성공 및 로컬 앱의 로그인 화면은 확인했다. 인증된 브라우저 세션이 없어 배포 서버의 실제 progress/resume/restart/result 응답, WebSocket 저장 완료, 실제 카메라/MediaPipe 추론 및 물리적 화면 회전은 검증하지 못했다. 테스트용 데이터 화면에서는 실제 카메라/REST 저장을 수행하지 않았다. 분석 페이지 도착 후 실제 종합 분석 조회 역시 미검증이다.
-
-블로커 수정과 인증된 실기기 검증 전까지 드래프트로 유지한다.
+1. [MeasurementFlowService.restart](https://github.com/attoungmeongdan/backend/blob/7383c019f74964a9d3dcb9b19425b82d1b20d5fb/src/main/java/com/atmd/backend/domain/fitness/service/MeasurementFlowService.java#L59)는 기존 기록 삭제와 첫 세션 생성을 결합한다. 따라서 초기화는 홈 선택 순간이 아니라 시작 자세를 확인한 시점에 일어난다. 또한 서버 restart 자체에는 오늘 완료 그룹 거부 검사가 없다. 프론트는 호출 직전 progress.completed를 확인한다.
+2. [ExerciseSessionService.create](https://github.com/attoungmeongdan/backend/blob/7383c019f74964a9d3dcb9b19425b82d1b20d5fb/src/main/java/com/atmd/backend/domain/fitness/service/ExerciseSessionService.java#L68)는 모드와 관계없이 사용자의 활성 세션을 정리한다. WORKOUT 생성이 남은 측정 런타임을 완료/만료 처리할 가능성은 프론트 캐시 분리만으로 제거되지 않는다.
+3. 생성 성공 응답 유실·소켓 연결 전 이탈은 별도 취소/멱등성 계약이 없어 즉시 재시작 시 활성 세션 409가 남을 수 있다. 열린 세션의 클라이언트 이탈은 close 4000으로 정리한다.
+4. 인증된 실제 기기에서 측정 4종목 전체 완료와 실제 결과 조회를 확인해야 한다. 자동화 통과가 실서버 검증을 대신하지 않는다.

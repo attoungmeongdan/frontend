@@ -93,3 +93,13 @@ it("an unavailable progress endpoint cannot create a new measurement", async () 
   expect(screen.getByRole("alert")).toBeTruthy();
   expect(router.state.location.pathname).toBe("/");
 });
+
+it("does not silently resume when restart is selected without a group ID", async () => {
+  const { router } = setup(1, "", "");
+  await tick();
+  fireEvent.click(screen.getByRole("button", { name: /측정해보기/ }));
+  await tick();
+  fireEvent.click(screen.getByRole("button", { name: "처음부터 측정하기" }));
+  expect(router.state.location.pathname).toBe("/");
+  expect(screen.getByRole("alert")).toBeTruthy();
+});

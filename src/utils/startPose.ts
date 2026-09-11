@@ -1,5 +1,5 @@
 import type { ExerciseType } from "@/constants/exercises";
-import type { PoseLandmarkPayload } from "@/types/exercise";
+import type { PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 const MIN_VISIBILITY = 0.6;
 
@@ -21,7 +21,15 @@ function angle(
 }
 
 function visible(landmarks: PoseLandmarkPayload[], ...indexes: number[]) {
-  return indexes.every((index) => (landmarks[index]?.visibility ?? 0) >= MIN_VISIBILITY);
+  return indexes.every((index) => {
+    const point = landmarks[index];
+    return (
+      point &&
+      Number.isFinite(point.x) &&
+      Number.isFinite(point.y) &&
+      point.visibility >= MIN_VISIBILITY
+    );
+  });
 }
 
 function isHorizontal(first: PoseLandmarkPayload, second: PoseLandmarkPayload) {
@@ -90,9 +98,20 @@ function matchesSide(
 export function matchesExerciseStartPose(
   exerciseType: ExerciseType,
   landmarks: PoseLandmarkPayload[],
+  frameSize: PoseFrameSize,
 ) {
-  if (landmarks.length !== 33) return false;
-  return (
-    matchesSide(exerciseType, landmarks, "left") || matchesSide(exerciseType, landmarks, "right")
-  );
+  const { width, height } = frameSize;
+  if (
+    landmarks.length !== 33 ||
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  )
+    return false;
+  // MediaPipe normalizes x and y by different dimensions. Restore equal axis
+  // units for angles/slope checks; do not rotate by screen orientation or mutate
+  // the original normalized payload sent to the workout server.
+  const points = landmarks.map((point) => ({ ...point, x: (point.x * width) / height }));
+  return matchesSide(exerciseType, points, "left") || matchesSide(exerciseType, points, "right");
 }

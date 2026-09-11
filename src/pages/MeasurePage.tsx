@@ -14,7 +14,7 @@ import turtleComplete from "@/assets/mascots/turtle-today-complete.png";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import type { ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise";
+import type { ExerciseCameraState, PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 const INTRO_BODY = "의자 앉았다 일어나기, 팔굽혀펴기,\n윗몸일으키기, 플랭크\n총 4단계로 진행돼요!";
 const formatTime = (ms: number) => {
@@ -48,8 +48,8 @@ function MeasurePage() {
   });
   const observeStartPose = startPose.observe;
   const handlePoseFrame = useCallback(
-    (landmarks: PoseLandmarkPayload[]) => {
-      observeStartPose(landmarks);
+    (landmarks: PoseLandmarkPayload[], frameSize: PoseFrameSize) => {
+      observeStartPose(landmarks, frameSize);
       sendPoseFrame(landmarks);
     },
     [observeStartPose, sendPoseFrame],
@@ -190,7 +190,7 @@ function MeasurePage() {
         cancelDisabled={busy || phase === "complete"}
         onCancel={moveHome}
       >
-        {import.meta.env.DEV && (
+        {import.meta.env.DEV && new URLSearchParams(window.location.search).has("debugCamera") && (
           <output className="bg-camera-scrim text-caption absolute right-2 bottom-2 z-20 rounded-sm px-2 py-1 text-white/80">
             start:{startPose.isMatching ? "match" : "wait"} · ws:{session.connectionState} · phase:
             {session.analysis?.phase ?? "-"} · send:{session.diagnostics.sentFrames}/

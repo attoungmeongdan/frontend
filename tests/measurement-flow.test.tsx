@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { MEASURE_STEPS } from "@/constants/measure";
 import { MEASUREMENT_RESULT_EXERCISES } from "@/constants/result";
+import { poseFor } from "./fixtures/poses";
 import MeasurePage from "@/pages/MeasurePage";
 import * as api from "@/apis/exerciseSessions";
 import { MEASUREMENT_ORDER, MEASUREMENT_PROGRESS_KEY } from "@/utils/measurementProgress";
@@ -13,13 +14,15 @@ import type {
   ExerciseSessionCreateResponse,
   MeasurementProgress,
   PoseLandmarkPayload,
+  PoseFrameSize,
 } from "@/types/exercise";
 
 const camera = vi.hoisted(() => ({
   start: vi.fn(),
   stop: vi.fn(),
-  frame: (points: PoseLandmarkPayload[]) => {
+  frame: (points: PoseLandmarkPayload[], frameSize: PoseFrameSize) => {
     void points;
+    void frameSize;
   },
 }));
 vi.mock("@/hooks/usePoseCamera", () => ({
@@ -62,8 +65,11 @@ class Socket extends EventTarget {
     this.readyState = 1;
     this.dispatchEvent(new Event("open"));
   }
-  close() {
+  closeCode: number | undefined;
+  close(code = 1000, reason = "") {
+    this.closeCode = code;
     this.readyState = 3;
+    this.dispatchEvent(new CloseEvent("close", { code, reason }));
   }
   message(data: unknown) {
     this.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(data) }));
@@ -100,32 +106,7 @@ function createSession() {
   return Promise.resolve(lastSession);
 }
 function pose(index: number) {
-  const points: PoseLandmarkPayload[] = Array.from({ length: 33 }, (_, i) => ({
-    index: i,
-    x: 0,
-    y: 0,
-    z: 0,
-    visibility: 1,
-    presence: 1,
-  }));
-  const set = (i: number, x: number, y: number) => {
-    points[i].x = x;
-    points[i].y = y;
-  };
-  if (index === 0) {
-    set(11, 0.5, 0.1);
-    set(23, 0.5, 0.4);
-    set(25, 0.5, 0.6);
-    set(27, 0.5, 0.9);
-  } else {
-    set(11, 0.1, 0.5);
-    set(23, 0.5, 0.5);
-    set(25, 0.7, index === 2 ? 0.3 : 0.5);
-    set(27, 0.9, 0.5);
-    set(13, 0.1, 0.7);
-    set(15, index === 3 ? 0.3 : 0.1, index === 3 ? 0.7 : 0.9);
-  }
-  return points;
+  return poseFor(MEASURE_STEPS[index].exercise, 1280, 720);
 }
 const tick = (ms = 500) =>
   act(async () => {
@@ -155,7 +136,7 @@ async function start(index: number) {
     fireEvent.click(screen.getByRole("button", { name: "알겠어요" }));
   fireEvent.click(screen.getByRole("button", { name: "준비됐어요" }));
   act(() => {
-    for (let i = 0; i < 12; i++) camera.frame(pose(index));
+    for (let i = 0; i < 12; i++) camera.frame(pose(index), { width: 1280, height: 720 });
   });
   await tick();
   act(() => Socket.sockets.at(-1)!.open());
@@ -199,7 +180,10 @@ beforeEach(() => {
   });
   vi.mocked(api.getWorkoutSessionResult).mockImplementation(async () => ({
     ...lastSession,
-    status: "COMPLETED",
+    status:
+      saved > MEASUREMENT_ORDER.indexOf(lastSession.exerciseType) || lastSession.mode === "WORKOUT"
+        ? "COMPLETED"
+        : "MEASURING",
     evaluationStandard: "KSPO",
     validCount: 8,
     invalidCount: 1,
@@ -297,7 +281,12 @@ describe("measurement page with shared session + start-pose hooks", () => {
       await tick();
       await start(1);
       expect(api.restartMeasurementSession).toHaveBeenCalledTimes(1);
-      expect(api.resumeMeasurementSession).toHaveBeenCalledTimes(1);
+      expect(api.resumeMeasurementSession).not.toHaveBeenCalled();
+      expect(api.createWorkoutSession).toHaveBeenCalledWith(
+        "PUSH_UP",
+        "restarted-group",
+        "MEASUREMENT",
+      );
     },
   );
   it("does not move to next guide before persisted result is confirmed; supports retry", async () => {
@@ -309,7 +298,7 @@ describe("measurement page with shared session + start-pose hooks", () => {
     await tick();
     expect(screen.getByRole("alert").textContent).toContain("save unavailable");
     expect(screen.queryByRole("dialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "저장 다시 시도" }));
+    fireEvent.click(screen.getByRole("button", { name: "완료 상태 다시 확인" }));
     await tick();
     expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
     expect(Socket.sockets).toHaveLength(1);
@@ -411,7 +400,10 @@ it.each(["cancel", "complete", "automatic"])(
     else if (action === "automatic") {
       act(() => Socket.sockets.at(-1)!.message(completeEvent()));
       await tick(0);
-    } else act(() => result.current.cancel());
+    } else {
+      act(() => result.current.cancel());
+      expect(Socket.sockets.at(-1)!.closeCode).toBe(4000);
+    }
     expect(client.getQueryData(MEASUREMENT_PROGRESS_KEY)).toEqual(initial);
     expect(client.getQueryState(MEASUREMENT_PROGRESS_KEY)?.isInvalidated).toBe(false);
     expect(api.getMeasurementProgress).not.toHaveBeenCalled();
@@ -441,9 +433,9 @@ it("expired measurement recovers via a fresh start pose, without skipping guide 
   );
   await tick();
   expect(screen.getByRole("alert").textContent).toContain("시작 자세");
-  fireEvent.click(screen.getByRole("button", { name: "시작 자세 다시 잡기" }));
+  fireEvent.click(screen.getByRole("button", { name: "세션 다시 시작" }));
   act(() => {
-    for (let i = 0; i < 5; i++) camera.frame(pose(0));
+    for (let i = 0; i < 5; i++) camera.frame(pose(0), { width: 1280, height: 720 });
   });
   await tick();
   expect(Socket.sockets).toHaveLength(2);
@@ -483,14 +475,14 @@ it("uses remainingTimeMs and never ends a timed measurement from the frontend cl
   expect(screen.getByLabelText("운동 횟수 7")).toBeTruthy();
   await tick(90000);
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(api.getWorkoutSessionResult).not.toHaveBeenCalled();
+  expect(api.completeWorkoutSession).not.toHaveBeenCalled();
   act(() =>
     Socket.sockets
       .at(-1)!
       .message({ ...completeEvent(), type: "ANALYSIS_RESULT", remainingTimeMs: 0 }),
   );
   expect(screen.getByText("남은 시간 00:00")).toBeTruthy();
-  expect(api.getWorkoutSessionResult).not.toHaveBeenCalled();
+  expect(api.completeWorkoutSession).not.toHaveBeenCalled();
 });
 it("plank has no frontend timeout and finishes only on backend completion", async () => {
   saved = 3;
@@ -512,4 +504,94 @@ it("plank has no frontend timeout and finishes only on backend completion", asyn
   complete();
   await tick();
   expect(screen.getByRole("dialog").textContent).toContain("모든 측정을 마쳤어요");
+});
+
+it("polling a completed result still waits for matching persisted progress", async () => {
+  mount();
+  await tick();
+  await start(0);
+  const result = vi.mocked(api.getWorkoutSessionResult).getMockImplementation()!;
+  vi.mocked(api.getWorkoutSessionResult).mockImplementation(async (id) => ({
+    ...(await result(id)),
+    status: "COMPLETED",
+  }));
+  await tick(3500);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.getByRole("alert").textContent).toContain("저장 확인");
+  expect(api.resumeMeasurementSession).not.toHaveBeenCalled();
+  saved = 1;
+  fireEvent.click(screen.getByRole("button", { name: "완료 상태 다시 확인" }));
+  await tick();
+  expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
+});
+
+it("a lost completion event advances once through verified progress and keeps the camera", async () => {
+  mount();
+  await tick();
+  await start(0);
+  saved = 1;
+  await tick(3500);
+  expect(screen.getByRole("dialog").textContent).toContain("팔굽혀펴기");
+  expect(camera.start).toHaveBeenCalledTimes(1);
+  await start(1);
+  expect(api.createWorkoutSession).toHaveBeenLastCalledWith("PUSH_UP", "group-1", "MEASUREMENT");
+  expect(api.resumeMeasurementSession).not.toHaveBeenCalled();
+});
+
+it("an expired session reuses the flow creator so its group and exercise are revalidated", async () => {
+  mount();
+  await tick();
+  await start(0);
+  const result = vi.mocked(api.getWorkoutSessionResult).getMockImplementation()!;
+  vi.mocked(api.getWorkoutSessionResult).mockImplementationOnce(async (id) => ({
+    ...(await result(id)),
+    status: "EXPIRED",
+  }));
+  await tick(3500);
+  fireEvent.click(screen.getByRole("button", { name: "세션 다시 시작" }));
+  // A different response must not bypass the measurement flow's session validation.
+  vi.mocked(api.resumeMeasurementSession).mockResolvedValueOnce({
+    ...lastSession,
+    sessionId: 99,
+    exerciseType: "PLANK",
+    measurementGroupId: "wrong-group",
+  });
+  act(() => {
+    for (let i = 0; i < 5; i++) camera.frame(pose(0), { width: 1280, height: 720 });
+  });
+  await tick();
+  expect(screen.getByRole("alert").textContent).toContain("다른 종목이나 그룹");
+  expect(Socket.sockets).toHaveLength(1);
+});
+
+it("invalid session responses never replace the progress cache", async () => {
+  const { client } = mount();
+  await tick();
+  vi.mocked(api.createWorkoutSession).mockResolvedValueOnce({
+    sessionId: 999,
+    mode: "WORKOUT",
+    exerciseType: "PLANK",
+    measurementGroupId: "wrong-group",
+  } as ExerciseSessionCreateResponse);
+  fireEvent.click(screen.getByRole("button", { name: "알겠어요" }));
+  fireEvent.click(screen.getByRole("button", { name: "준비됐어요" }));
+  act(() => {
+    for (let i = 0; i < 5; i++) camera.frame(pose(0), { width: 1280, height: 720 });
+  });
+  await tick();
+  expect(screen.getByRole("alert").textContent).toContain("다른 종목이나 그룹");
+  expect(client.getQueryData(MEASUREMENT_PROGRESS_KEY)).toEqual(progress());
+  expect(Socket.sockets).toHaveLength(0);
+});
+
+it.each([1, 4])("rejects duplicate progress entries with %i saved exercises", async (count) => {
+  saved = count;
+  group = "existing-group";
+  vi.mocked(api.getMeasurementProgress).mockResolvedValue({
+    ...progress(),
+    completedExercises: [...progress().completedExercises, "CHAIR_STAND"],
+  });
+  mount();
+  await tick();
+  expect(screen.getByRole("alert").textContent).toContain("중복");
 });

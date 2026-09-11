@@ -6,6 +6,9 @@ export const MEASUREMENT_ORDER = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"] a
 /** Only persisted, consecutive results establish a resume point. Never silently reorder exercises. */
 export function getMeasurementPosition(progress: MeasurementProgress) {
   const saved = new Set(progress.completedExercises);
+  if (saved.size !== progress.completedExercises.length) {
+    throw new Error("저장된 측정 종목이 중복됐어요. 진행 상태를 다시 확인해 주세요.");
+  }
   const index = MEASUREMENT_ORDER.findIndex((type) => !saved.has(type));
   if (index === -1) {
     if (!progress.completed || !progress.measurementGroupId) {

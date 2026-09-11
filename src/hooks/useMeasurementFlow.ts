@@ -26,6 +26,7 @@ export function useMeasurementFlow() {
   );
   const generationRef = useRef(0);
   const verifiedRef = useRef<MeasurementProgress | null>(null);
+  const continuationGroupRef = useRef<string | null>(null);
   const [phase, setPhase] = useState<MeasurementPhase>("loading");
   const [stepIndex, setStepIndex] = useState(0);
   const [groupId, setGroupId] = useState<string | null>(null);
@@ -53,6 +54,8 @@ export function useMeasurementFlow() {
 
   const load = useCallback(async () => {
     const generation = ++generationRef.current;
+    verifiedRef.current = null;
+    continuationGroupRef.current = null;
     setPhase("loading");
     setError(null);
     try {
@@ -107,11 +110,28 @@ export function useMeasurementFlow() {
     // Both endpoints create a session/ticket immediately. Call only after start-pose detection.
     const session = restarting
       ? await restartMeasurementSession()
-      : progress.measurementGroupId
+      : progress.measurementGroupId && continuationGroupRef.current !== progress.measurementGroupId
         ? await resumeMeasurementSession()
-        : await createWorkoutSession(MEASUREMENT_ORDER[stepIndex], undefined, "MEASUREMENT");
+        : await createWorkoutSession(
+            MEASUREMENT_ORDER[stepIndex],
+            progress.measurementGroupId ?? undefined,
+            "MEASUREMENT",
+          );
     if (generation !== generationRef.current) return session;
     restartGroupRef.current = null;
+    continuationGroupRef.current = null;
+    if (
+      session.mode !== "MEASUREMENT" ||
+      session.exerciseType !== MEASUREMENT_ORDER[stepIndex] ||
+      !session.measurementGroupId ||
+      (!restarting &&
+        progress.measurementGroupId !== null &&
+        session.measurementGroupId !== progress.measurementGroupId)
+    ) {
+      throw new Error(
+        "서버가 다른 종목이나 그룹의 세션을 반환했어요. 진행 상태를 다시 확인해 주세요.",
+      );
+    }
     const currentProgress: MeasurementProgress = {
       measurementGroupId: session.measurementGroupId,
       completedExercises: restarting ? [] : progress.completedExercises,
@@ -120,16 +140,8 @@ export function useMeasurementFlow() {
     };
     cacheProgress(currentProgress);
     setGroupId(session.measurementGroupId);
-    void queryClient.invalidateQueries({ queryKey: MEASUREMENT_PROGRESS_KEY });
-    if (
-      session.mode !== "MEASUREMENT" ||
-      session.exerciseType !== MEASUREMENT_ORDER[stepIndex] ||
-      !session.measurementGroupId
-    ) {
-      throw new Error("서버가 다른 종목의 세션을 반환했어요. 진행 상태를 다시 확인해 주세요.");
-    }
     return session;
-  }, [applyProgress, cacheProgress, queryClient, stepIndex]);
+  }, [applyProgress, cacheProgress, stepIndex]);
 
   const verifyCompletion = useCallback(
     async (result: ExerciseSessionResult) => {
@@ -142,8 +154,8 @@ export function useMeasurementFlow() {
         throw new Error("현재 종목의 저장 결과가 아니에요.");
       }
       const progress = await getMeasurementProgress();
-      if (generation !== generationRef.current) return;
-      cacheProgress(progress);
+      if (generation !== generationRef.current)
+        throw new Error("측정 진행 상태가 변경됐어요. 다시 확인해 주세요.");
       if (
         progress.measurementGroupId !== result.measurementGroupId ||
         !progress.completedExercises.includes(result.exerciseType)
@@ -151,6 +163,7 @@ export function useMeasurementFlow() {
         throw new Error("현재 종목의 저장을 확인하지 못했어요. 저장 확인을 다시 시도해 주세요.");
       }
       getMeasurementPosition(progress);
+      cacheProgress(progress);
       verifiedRef.current = progress;
     },
     [cacheProgress, stepIndex],
@@ -160,6 +173,7 @@ export function useMeasurementFlow() {
     const progress = verifiedRef.current;
     if (!progress) return;
     verifiedRef.current = null;
+    continuationGroupRef.current = progress.measurementGroupId;
     applyProgress(progress);
     void queryClient.invalidateQueries({ queryKey: ["measurement-history"] });
   }, [applyProgress, queryClient]);
