@@ -354,14 +354,29 @@ export function useWorkoutSession({
       moveToCompleted(sessionId);
     } catch (error) {
       try {
-        await verifyCompletedResult(sessionId);
+        const result = await getWorkoutSessionResult(sessionId);
+        if (result.status === "COMPLETED") {
+          moveToCompleted(sessionId);
+          return;
+        }
+        if (result.status === "EXPIRED" || result.status === "CANCELLED") {
+          closeSocket();
+          sessionRef.current = null;
+          setConnectionError(
+            "자세 인식이 오래 끊겨 세션이 종료됐어요. 새 세션으로 다시 시작해 주세요.",
+          );
+          setRetryAction("start");
+          updateConnectionState("error");
+          return;
+        }
+        throw new Error("운동 기록 저장이 아직 완료되지 않았어요.");
       } catch {
         setConnectionError(errorMessage(error, "운동 기록을 저장하지 못했어요."));
         setRetryAction("complete");
         updateConnectionState("error");
       }
     }
-  }, [mode, moveToCompleted, updateConnectionState, verifyCompletedResult]);
+  }, [closeSocket, mode, moveToCompleted, updateConnectionState]);
 
   const retry = useCallback(() => {
     const sessionId = sessionRef.current?.sessionId;
