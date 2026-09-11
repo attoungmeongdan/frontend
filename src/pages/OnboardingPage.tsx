@@ -27,9 +27,15 @@ type AddressStatus = "idle" | "done" | "fail";
 
 // 숫자 아닌 값을 입력했을 때 단계별 오류 문구
 const INVALID_MESSAGE = {
-  age: "나이를 입력해 주세요.",
-  height: "키를 입력해 주세요.",
-  weight: "몸무게를 입력해 주세요.",
+  age: "100 이하의 숫자로 입력해 주세요.",
+  height: "250 이하의 숫자로 입력해 주세요.",
+  weight: "300 이하의 숫자로 사이로 입력해 주세요.",
+} as const;
+
+const VALUE_RANGE = {
+  age: { min: 1, max: 120 },
+  height: { min: 0.1, max: 250 },
+  weight: { min: 1, max: 300 },
 } as const;
 
 const ADDRESS_HELPER: Record<AddressStatus, string> = {
@@ -38,8 +44,18 @@ const ADDRESS_HELPER: Record<AddressStatus, string> = {
   fail: "주소 검색에 실패했어요. 잠시 후 다시 시도해 주세요.",
 };
 
-function isPositiveNumber(value: string) {
-  return /^\d+(\.\d+)?$/.test(value.trim()) && Number(value) > 0;
+function isInRange(value: string, { min, max }: { min: number; max: number }) {
+  if (!/^\d+(\.\d+)?$/.test(value.trim())) {
+    return false;
+  }
+
+  const parsed = Number(value);
+
+  return parsed >= min && parsed <= max;
+}
+
+function isValidAge(value: string) {
+  return /^\d+$/.test(value.trim()) && isInRange(value, VALUE_RANGE.age);
 }
 
 // 서버가 내려준 메시지를 그대로 보여주고, 없으면 일반 문구로 대체
@@ -124,15 +140,15 @@ function OnboardingPage() {
   };
 
   const handleNext = () => {
-    if (step.id === "age" && !isPositiveNumber(age)) {
+    if (step.id === "age" && !isValidAge(age)) {
       setError(INVALID_MESSAGE.age);
       return;
     }
-    if (step.id === "height" && !isPositiveNumber(height)) {
+    if (step.id === "height" && !isInRange(height, VALUE_RANGE.height)) {
       setError(INVALID_MESSAGE.height);
       return;
     }
-    if (step.id === "weight" && !isPositiveNumber(weight)) {
+    if (step.id === "weight" && !isInRange(weight, VALUE_RANGE.weight)) {
       setError(INVALID_MESSAGE.weight);
       return;
     }
