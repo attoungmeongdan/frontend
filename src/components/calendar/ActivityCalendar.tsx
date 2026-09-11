@@ -131,10 +131,10 @@ function DayMark({ cell, onOpenAnalysis }: DayMarkProps) {
   const isMeasured = measurementId !== null;
   const todayLabel = isToday ? " 오늘" : "";
   const measuredLabel = isMeasured ? " 체력 측정 완료" : "";
-  const label =
-    exerciseCount > 0
-      ? `${date}일 운동 ${exerciseCount}개${measuredLabel}${todayLabel}`
-      : `${date}일${todayLabel}`;
+  // 운동·측정·오늘은 서로 독립이라 분기 대신 조각을 이어붙인다.
+  // 분기로 두면 측정만 한 날(count 0 + measured)에서 측정 정보가 빠진다
+  const exerciseLabel = exerciseCount > 0 ? ` 운동 ${exerciseCount}개` : "";
+  const label = `${date}일${exerciseLabel}${measuredLabel}${todayLabel}`;
 
   const numberTone = isToday
     ? "text-action-orange font-bold"

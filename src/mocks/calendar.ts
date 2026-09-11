@@ -49,11 +49,19 @@ function getLastDate(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
-function toDailyExercise(day: number, count: number, measured: boolean): DailyExercise {
+// 지난달 표본은 모든 달에 재사용되므로 날짜만으로는 ID 가 달마다 겹친다.
+// 이 값이 /measurements/:id/analysis 경로로 들어가서 연·월까지 넣는다
+function toDailyExercise(
+  year: number,
+  month: number,
+  day: number,
+  count: number,
+  measured: boolean,
+): DailyExercise {
   return {
     day,
     count,
-    measurementId: measured ? `mock-measurement-${day}` : null,
+    measurementId: measured ? `mock-measurement-${year}-${month}-${day}` : null,
   };
 }
 
@@ -67,7 +75,7 @@ export function getCalendarMock(year: number, month: number): MonthlyActivity {
 
   if (isCurrentMonth) {
     const exercisedDays = CURRENT_MONTH_SEEDS.map(({ offset, count, measured }) =>
-      toDailyExercise(seoulToday.date - offset, count, measured),
+      toDailyExercise(year, month, seoulToday.date - offset, count, measured),
     )
       .filter(({ day }) => day >= 1)
       .sort((a, b) => a.day - b.day);
@@ -83,7 +91,7 @@ export function getCalendarMock(year: number, month: number): MonthlyActivity {
 
   const lastDate = getLastDate(year, month);
   const exercisedDays = PAST_MONTH_SEEDS.filter(({ day }) => day <= lastDate).map(
-    ({ day, count, measured }) => toDailyExercise(day, count, measured),
+    ({ day, count, measured }) => toDailyExercise(year, month, day, count, measured),
   );
 
   return { year, month, today: null, totalTargetDays: lastDate, exercisedDays };
