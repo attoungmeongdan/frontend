@@ -122,12 +122,18 @@ export function useWorkoutSession({
   const moveToCompleted = useCallback(
     (sessionId: number) => {
       if (completedRef.current) return;
+      const completedMeasurementGroupId = sessionRef.current?.measurementGroupId;
       completedRef.current = true;
       closeSocket();
+      sessionRef.current = null;
+      setAnalysis(null);
+      setConnectionError(null);
+      setRetryAction("start");
+      updateConnectionState("idle");
       void queryClient.invalidateQueries({ queryKey: ["recent-seven-days"] });
-      onCompletedRef.current(sessionId, sessionRef.current?.measurementGroupId);
+      onCompletedRef.current(sessionId, completedMeasurementGroupId);
     },
-    [closeSocket, queryClient],
+    [closeSocket, queryClient, updateConnectionState],
   );
 
   const verifyCompletedResult = useCallback(
