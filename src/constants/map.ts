@@ -53,3 +53,6 @@ export const SHEET_INFO_VALUE =
   "공공데이터 제공 항목만 표시 — 미제공 전화·운영시간은 표기하지 않음";
 
 export const SHEET_CLOSE_LABEL = "닫기";
+
+/** 시설명 옆 거리 표기 접두어. "집에서 1.2km" */
+export const SHEET_DISTANCE_PREFIX = "집에서";
