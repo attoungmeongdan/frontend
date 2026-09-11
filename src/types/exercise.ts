@@ -41,3 +41,78 @@ export interface MeasurementHistory {
   today: MeasurementRecord | null;
   previousMeasurements: MeasurementRecord[];
 }
+
+/** 동연령대 평균 대비 비교 등급. 프론트에서 계산하지 않고 서버 값을 그대로 쓴다 */
+export type ComparisonLevel = "LOW" | "SIMILAR" | "HIGH";
+
+export type ApiGender = "MALE" | "FEMALE";
+
+export interface ExercisePeerComparison {
+  exerciseType: ApiExerciseType;
+  /** 사용자의 유효 횟수 또는 플랭크 유지 시간 */
+  measuredValue: number;
+  /** 사용자 성별·연령에 해당하는 운동 기준 평균 */
+  averageValue: number;
+  unit: "COUNT" | "SECOND";
+  level: ComparisonLevel;
+  message: string;
+}
+
+export interface PercentileBucket {
+  minimum: number;
+  maximum: number;
+  count: number;
+  percentage: number;
+}
+
+export interface MeasurementPercentile {
+  /** 백분위·분포 제공 가능 여부. 동일 성별·연령대 비교 표본이 30건 미만이면 false */
+  available: boolean;
+  value: number | null;
+  topPercent: number | null;
+  comparisonGender: ApiGender;
+  comparisonAgeGroup: string;
+  sampleSize: number;
+  message: string;
+  userScore: number;
+  userBucketIndex: number | null;
+  maximumBucketCount: number | null;
+  buckets: PercentileBucket[];
+}
+
+export interface PerformanceGroupComparison {
+  gender: ApiGender;
+  ageGroup: string;
+  label: string;
+  similarityRate: number;
+}
+
+/** 유사도가 가장 높은 운동 수행력 그룹. 임의로 나이를 계산하지 않고 서버가 준 그룹을 그대로 쓴다 */
+export interface FitnessPerformance {
+  gender: ApiGender;
+  ageGroup: string;
+  label: string;
+  message: string;
+}
+
+export interface MeasurementAnalysis {
+  measurementGroupId: string;
+  exerciseComparisons: ExercisePeerComparison[];
+  overallScore: number;
+  percentile: MeasurementPercentile;
+  performanceGroupComparisons: PerformanceGroupComparison[];
+  fitnessPerformance: FitnessPerformance;
+}
+
+export interface MeasuredExercise {
+  exerciseType: ApiExerciseType;
+  value: number;
+  unit: "COUNT" | "SECOND";
+}
+
+/** 측정값만 있고 비교·백분위는 없는 조회 결과 */
+export interface MeasurementResults {
+  measurementGroupId: string;
+  measuredAt: string;
+  exercises: MeasuredExercise[];
+}
