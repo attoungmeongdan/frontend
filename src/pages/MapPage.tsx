@@ -1,6 +1,7 @@
 import { LoaderCircle, MapPin, TriangleAlert } from "lucide-react";
 import { useCallback, useState } from "react";
 import FacilityBottomSheet from "@/components/map/FacilityBottomSheet";
+import FacilityRoadview from "@/components/map/FacilityRoadview";
 import MapCenterMessage from "@/components/map/MapCenterMessage";
 import MapMarkers from "@/components/map/MapMarkers";
 import { MAP_MESSAGES } from "@/constants/map";
@@ -12,7 +13,7 @@ function MapPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const handleSelect = useCallback((facilityId: number) => setSelectedId(facilityId), []);
-  const closeSheet = () => setSelectedId(null);
+  const closeSheet = useCallback(() => setSelectedId(null), []);
 
   const selectedFacility = facilities.find((facility) => facility.id === selectedId) ?? null;
   const isEmpty = status === "ready" && facilities.length === 0;
@@ -28,6 +29,8 @@ function MapPage() {
         selectedId={selectedId}
         onSelect={handleSelect}
       />
+
+      <FacilityRoadview map={map} facility={selectedFacility} onClose={closeSheet} />
 
       {status === "loading" && (
         <MapCenterMessage
