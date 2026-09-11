@@ -45,7 +45,8 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.startsWith("/voice/"),
             handler: "CacheFirst",
             options: {
-              cacheName: "voice",
+              // 증폭 전 음원을 계속 쓰지 않도록 음원 변경 시 캐시 버전을 올린다.
+              cacheName: "voice-v2",
               expiration: { maxEntries: 64 },
             },
           },
