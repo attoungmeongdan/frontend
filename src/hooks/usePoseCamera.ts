@@ -5,7 +5,7 @@ import type { ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise"
 const MEDIAPIPE_VERSION = "1.0.1";
 const WASM_BASE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
 const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 interface PoseCameraDiagnostics {
   cameraReady: boolean;
