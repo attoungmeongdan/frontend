@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { motion } from "motion/react";
 import { Building2, MapPin, X } from "lucide-react";
 import SheetStepView from "@/components/common/SheetStepView";
 import { SHEET_CLOSE_LABEL, SHEET_FIELD_LABELS } from "@/constants/map";
@@ -9,7 +11,22 @@ interface FacilityBottomSheetProps {
   onClose: () => void;
 }
 
+// 시트가 올라오고 내려가는 모션
+const SHEET_TRANSITION = { type: "spring", stiffness: 400, damping: 40, mass: 0.8 } as const;
+
 function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const fields = [
     {
       icon: MapPin,
@@ -20,8 +37,12 @@ function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
   ];
 
   return (
-    <section
+    <motion.section
       aria-label={facility.name}
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={SHEET_TRANSITION}
       // 카카오 지도 내부 레이어가 z-index 2 까지 쓰므로 그 위로 올린다
       className="bg-surface-default shadow-sheet absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-3xl"
     >
@@ -49,7 +70,7 @@ function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
           ))}
         </dl>
       </SheetStepView>
-    </section>
+    </motion.section>
   );
 }
 
