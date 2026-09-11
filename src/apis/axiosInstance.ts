@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import {
-  clearAccessToken,
+  expireSession,
   getAccessToken,
   getSessionId,
   updateTokenForSession,
@@ -81,8 +81,7 @@ axiosInstance.interceptors.response.use(
     try {
       accessToken = await requestNewAccessToken();
     } catch (refreshError) {
-      // 갱신까지 실패하면 세션이 끝난 것으로 본다
-      clearAccessToken();
+      expireSession();
 
       return Promise.reject(refreshError);
     }
