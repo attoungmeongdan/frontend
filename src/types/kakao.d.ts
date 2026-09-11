@@ -43,23 +43,47 @@ declare namespace kakao.maps {
     setMap(map: Map | null): void;
   }
 
-  function load(callback: () => void): void;
-
-  namespace services {
-    const Status: { OK: string; ZERO_RESULT: string; ERROR: string };
-
-    interface AddressSearchResult {
-      x: string;
-      y: string;
-    }
-
-    class Geocoder {
-      addressSearch(
-        address: string,
-        callback: (result: AddressSearchResult[], status: string) => void,
-      ): void;
-    }
+  class Size {
+    constructor(width: number, height: number);
   }
+
+  class Point {
+    constructor(x: number, y: number);
+  }
+
+  class MarkerImage {
+    constructor(src: string, size: Size, options?: { offset?: Point });
+  }
+
+  class Marker {
+    constructor(options: { position: LatLng; image?: MarkerImage; title?: string });
+    setImage(image: MarkerImage): void;
+    setMap(map: Map | null): void;
+  }
+
+  /** 마커가 많을 때 가까운 것끼리 묶어 준다. libraries=clusterer 로 로드해야 쓸 수 있다 */
+  class MarkerClusterer {
+    constructor(options: {
+      map: Map;
+      markers?: Marker[];
+      averageCenter?: boolean;
+      minLevel?: number;
+      disableClickZoom?: boolean;
+      /** 단계를 나누는 개수 기준 */
+      calculator?: number[];
+      /** calculator 구간 수보다 하나 많게 준다 */
+      styles?: Record<string, string>[];
+    });
+    addMarkers(markers: Marker[]): void;
+    clear(): void;
+  }
+
+  function event(): void;
+  namespace event {
+    function addListener(target: object, type: string, handler: (...args: never[]) => void): void;
+  }
+
+  function load(callback: () => void): void;
 }
 
 // https://postcode.map.kakao.com/guide

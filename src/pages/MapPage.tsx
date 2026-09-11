@@ -9,9 +9,9 @@ import { useFacilityMap } from "@/hooks/useFacilityMap";
 // 09_Map — /map (집 주소 기준 반경 5km 공공 체육시설)
 function MapPage() {
   const { status, home, facilities, map, containerRef, retry } = useFacilityMap();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const handleSelect = useCallback((facilityId: string) => setSelectedId(facilityId), []);
+  const handleSelect = useCallback((facilityId: number) => setSelectedId(facilityId), []);
   const closeSheet = () => setSelectedId(null);
 
   const selectedFacility = facilities.find((facility) => facility.id === selectedId) ?? null;
@@ -38,13 +38,13 @@ function MapPage() {
         />
       )}
 
-      {status === "geocodeFailed" && (
+      {status === "addressUnavailable" && (
         <MapCenterMessage
           icon={TriangleAlert}
           iconClassName="text-feedback-error"
-          title={MAP_MESSAGES.geocodeFailed.title}
-          description={MAP_MESSAGES.geocodeFailed.description}
-          action={{ label: MAP_MESSAGES.geocodeFailed.action, onClick: retry }}
+          title={MAP_MESSAGES.addressUnavailable.title}
+          description={MAP_MESSAGES.addressUnavailable.description}
+          action={{ label: MAP_MESSAGES.addressUnavailable.action, onClick: retry }}
         />
       )}
 
