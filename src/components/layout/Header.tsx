@@ -24,8 +24,8 @@ function Header({ title, showBack = false, showClose = false, backTo, onBack }: 
 
   return (
     // 아이폰 노치·다이나믹 아일랜드 아래로 내리고, safe-area 가 없는 기기도 최소 8px 은 띄운다
-    // 높이 64px(위 여백 20 + 행 44) + 상단 8px = 72px
-    <header className="bg-surface-default box-content flex h-16 shrink-0 flex-col justify-end px-2 pt-[max(8px,env(safe-area-inset-top))]">
+    // 높이 44px(행 44) + 상단 8px = 52px
+    <header className="bg-surface-default box-content flex h-11 shrink-0 flex-col justify-end px-2 pt-[max(8px,env(safe-area-inset-top))]">
       {/* 44px 버튼 높이에 맞춘 행, 버튼·제목을 세로 중앙에 둔다 */}
       <div className="flex h-11 items-center justify-between">
         <div className="flex size-11 items-center justify-center">
