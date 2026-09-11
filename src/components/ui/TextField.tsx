@@ -8,6 +8,8 @@ interface TextFieldProps extends Omit<ComponentProps<"input">, "id"> {
   unit?: string;
   helper?: string;
   status?: FieldStatus;
+  /** subtle 은 버튼·카드와 같은 연한 테두리를 쓴다. 기본은 입력칸용 진한 테두리 */
+  borderTone?: "strong" | "subtle";
 }
 
 // UI/TextField (nNDM3) — 라벨 14/600 + 입력박스 52 + 헬퍼행
@@ -18,9 +20,21 @@ const BOX_CLASS: Record<FieldStatus, string> = {
   readonly: "border-border-default bg-surface-subtle border",
 };
 
-function TextField({ label, unit, helper, status = "default", ...props }: TextFieldProps) {
+function TextField({
+  label,
+  unit,
+  helper,
+  status = "default",
+  borderTone = "strong",
+  ...props
+}: TextFieldProps) {
   const inputId = useId();
   const isError = status === "error";
+  // 오류·읽기전용은 상태를 테두리로 알려야 해서 톤 옵션을 적용하지 않는다
+  const boxClass =
+    status === "default" && borderTone === "subtle"
+      ? "border-border-default border bg-white"
+      : BOX_CLASS[status];
   const HelperIcon = isError ? TriangleAlert : Check;
 
   return (
@@ -29,9 +43,7 @@ function TextField({ label, unit, helper, status = "default", ...props }: TextFi
         {label}
       </label>
 
-      <div
-        className={`rounded-input flex h-13 items-center justify-between px-4 ${BOX_CLASS[status]}`}
-      >
+      <div className={`rounded-input flex h-13 items-center justify-between px-4 ${boxClass}`}>
         <input
           id={inputId}
           readOnly={status === "readonly"}

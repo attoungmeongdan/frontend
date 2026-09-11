@@ -17,6 +17,11 @@ interface ActivityCalendarProps {
   canGoPrev: boolean;
   /** 이번 달을 보고 있으면 다음 달로 갈 수 없다. 미래 기록은 없다 */
   canGoNext: boolean;
+  /**
+   * group 은 운동 기록만 보여 준다.
+   * 체력 측정 표시·분석 화면 이동·아래 안내 문구를 모두 빼서 날짜를 눌러도 아무 일이 없다.
+   */
+  variant?: "personal" | "group";
 }
 
 /** 게이지 채움과 남은 자리 색 */
@@ -41,9 +46,11 @@ function ActivityCalendar({
   onNextMonth,
   canGoPrev,
   canGoNext,
+  variant = "personal",
 }: ActivityCalendarProps) {
   const navigate = useNavigate();
   const weeks = buildMonthGrid(activity);
+  const showsMeasurement = variant === "personal";
 
   const openAnalysis = (measurementId: string) => {
     navigate(`/measurements/${measurementId}/analysis`);
@@ -93,7 +100,11 @@ function ActivityCalendar({
           <div key={weekIndex} className="flex">
             {week.map((cell, weekday) => (
               <div key={weekday} className="flex h-[42px] flex-1 items-center justify-center">
-                <DayMark cell={cell} onOpenAnalysis={openAnalysis} />
+                <DayMark
+                  cell={cell}
+                  onOpenAnalysis={openAnalysis}
+                  showsMeasurement={showsMeasurement}
+                />
               </div>
             ))}
           </div>
@@ -109,16 +120,20 @@ function ActivityCalendar({
           </span>
           <span className="text-text-secondary text-caption">{LEGEND_EXERCISED_LABEL}</span>
         </li>
-        <li className="flex items-center gap-1.5">
-          <span className="bg-action-orange size-2.5 rounded-full" aria-hidden />
-          <span className="text-text-secondary text-caption">{LEGEND_MEASURED_LABEL}</span>
-        </li>
+        {showsMeasurement && (
+          <li className="flex items-center gap-1.5">
+            <span className="bg-action-orange size-2.5 rounded-full" aria-hidden />
+            <span className="text-text-secondary text-caption">{LEGEND_MEASURED_LABEL}</span>
+          </li>
+        )}
       </ul>
 
-      <p className="text-text-secondary text-caption flex items-center gap-1">
-        <Info size={14} aria-hidden className="text-brand-mint shrink-0" />
-        {LEGEND_ANALYSIS_HINT}
-      </p>
+      {showsMeasurement && (
+        <p className="text-text-secondary text-caption flex items-center gap-1">
+          <Info size={14} aria-hidden className="text-brand-mint shrink-0" />
+          {LEGEND_ANALYSIS_HINT}
+        </p>
+      )}
     </section>
   );
 }
@@ -126,6 +141,8 @@ function ActivityCalendar({
 interface DayMarkProps {
   cell: DayCell;
   onOpenAnalysis: (measurementId: string) => void;
+  /** false 면 측정 점과 분석 이동을 모두 빼고 운동 기록만 보여 준다 */
+  showsMeasurement: boolean;
 }
 
 /**
@@ -133,12 +150,12 @@ interface DayMarkProps {
  * 배경색은 자유 운동 종목 수, 오렌지 테두리·체크는 그날 체력 측정까지 마쳤다는 뜻이다.
  * 측정한 날은 눌러서 측정 분석 화면으로 갈 수 있다.
  */
-function DayMark({ cell, onOpenAnalysis }: DayMarkProps) {
+function DayMark({ cell, onOpenAnalysis, showsMeasurement }: DayMarkProps) {
   const { date, isToday, isFuture, isBeforeJoin, exerciseCount, measurementId } = cell;
 
   if (date === null) return null;
 
-  const isMeasured = measurementId !== null;
+  const isMeasured = showsMeasurement && measurementId !== null;
   const todayLabel = isToday ? " 오늘" : "";
   const measuredLabel = isMeasured ? " 체력 측정 완료" : "";
   const beforeJoinLabel = isBeforeJoin ? " 가입 전" : "";
@@ -171,7 +188,7 @@ function DayMark({ cell, onOpenAnalysis }: DayMarkProps) {
   );
 
   // 측정한 날만 분석 화면으로 갈 수 있다
-  if (isMeasured) {
+  if (isMeasured && measurementId !== null) {
     return (
       <button
         type="button"

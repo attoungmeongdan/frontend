@@ -6,6 +6,8 @@ import type { Group } from "@/types/group";
 interface GroupSettingsSheetProps {
   open: boolean;
   group: Group;
+  /** 초대 링크를 아직 받아오는 중이면 복사를 막는다 */
+  isInviteLinkPending: boolean;
   onClose: () => void;
   onCopyLink: () => void;
   onDelete: () => void;
@@ -14,13 +16,19 @@ interface GroupSettingsSheetProps {
 function GroupSettingsSheet({
   open,
   group,
+  isInviteLinkPending,
   onClose,
   onCopyLink,
   onDelete,
 }: GroupSettingsSheetProps) {
   return (
     <BottomSheet open={open} title={group.name} onClose={onClose} bodyPadding="list">
-      <MenuRow icon={Link} label={GROUP_SETTINGS_MENU.copyLink} onClick={onCopyLink} />
+      <MenuRow
+        icon={Link}
+        label={GROUP_SETTINGS_MENU.copyLink}
+        onClick={onCopyLink}
+        disabled={isInviteLinkPending}
+      />
 
       <span className="bg-border-default mx-3 my-1 h-px" aria-hidden />
 
@@ -34,11 +42,23 @@ interface MenuRowProps {
   label: string;
   onClick: () => void;
   destructive?: boolean;
+  disabled?: boolean;
 }
 
-function MenuRow({ icon: Icon, label, onClick, destructive = false }: MenuRowProps) {
+function MenuRow({
+  icon: Icon,
+  label,
+  onClick,
+  destructive = false,
+  disabled = false,
+}: MenuRowProps) {
   return (
-    <button type="button" onClick={onClick} className="flex h-13 w-full items-center gap-3 px-3">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex h-13 w-full items-center gap-3 px-3 disabled:opacity-40"
+    >
       <span
         className={`flex size-9 shrink-0 items-center justify-center rounded-sm ${
           destructive
