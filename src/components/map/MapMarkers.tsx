@@ -125,6 +125,38 @@ function MapMarkers({ map, home, facilities, selectedId, onSelect }: MapMarkersP
     }
   }, [selectedId, facilities]);
 
+  // 선택한 시설 마커 위에 이름 말풍선을 띄우고 화면 가운데로 옮긴다.
+  // 카카오 InfoWindow 는 모양을 못 바꿔 오버레이로 직접 그린다
+  useEffect(() => {
+    const sdk = window.kakao;
+    const marker = selectedId === null ? undefined : markersRef.current.get(selectedId);
+    const facility = facilities.find((item) => item.id === selectedId);
+    if (!map || !sdk || !marker || !facility) return;
+
+    const element = document.createElement("div");
+    const root = createRoot(element);
+    root.render(<FacilityLabel name={facility.name} />);
+
+    // 렌더가 비동기라 생성 시점엔 크기가 0 이어서 카카오 앵커가 어긋난다. CSS 로 마커 위 가운데에 맞춘다
+    element.style.transform = "translate(-50%, -100%)";
+
+    const position = marker.getPosition();
+    const overlay = new sdk.maps.CustomOverlay({
+      map,
+      position,
+      content: element,
+      xAnchor: 0,
+      yAnchor: 0,
+      zIndex: 3,
+    });
+    map.panTo(position);
+
+    return () => {
+      overlay.setMap(null);
+      queueMicrotask(() => root.unmount());
+    };
+  }, [map, selectedId, facilities]);
+
   return null;
 }
 
@@ -136,6 +168,21 @@ function HomeMarker() {
       className="bg-brand-teal-strong border-brand-teal-strong flex size-9 items-center justify-center rounded-full border"
     >
       <House size={18} className="text-action-primary-fg" aria-hidden />
+    </div>
+  );
+}
+
+/** 마커 위 이름 말풍선. 아래 꼬리가 마커 위 끝에 닿도록 마커 반지름만큼 띄운다 */
+function FacilityLabel({ name }: { name: string }) {
+  return (
+    <div
+      className="flex flex-col items-center"
+      style={{ paddingBottom: FACILITY_MARKER_SIZE / 2 + 4 }}
+    >
+      <div className="bg-brand-teal-strong text-action-primary-fg text-note-title shadow-card rounded-bubble max-w-56 truncate px-3.5 py-2">
+        {name}
+      </div>
+      <span aria-hidden className="bg-brand-teal-strong -mt-1.5 size-3 rotate-45 rounded-[2px]" />
     </div>
   );
 }

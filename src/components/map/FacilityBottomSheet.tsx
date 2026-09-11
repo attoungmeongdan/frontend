@@ -1,5 +1,10 @@
-import { Building2, Info, MapPin, X } from "lucide-react";
-import { SHEET_CLOSE_LABEL, SHEET_FIELD_LABELS, SHEET_INFO_VALUE } from "@/constants/map";
+import { Building2, House, Info, MapPin, X } from "lucide-react";
+import {
+  SHEET_CLOSE_LABEL,
+  SHEET_DISTANCE_PREFIX,
+  SHEET_FIELD_LABELS,
+  SHEET_INFO_VALUE,
+} from "@/constants/map";
 import { formatDistance } from "@/utils/geo";
 import type { FacilityMarker } from "@/apis/facility";
 
@@ -11,11 +16,7 @@ interface FacilityBottomSheetProps {
 // Feature/FacilitySheet (W9YtV) — 공공데이터 제공 항목만 표시한다
 function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
   const fields = [
-    {
-      icon: MapPin,
-      label: SHEET_FIELD_LABELS.location,
-      value: `${facility.roadNameAddress} (집에서 ${formatDistance(facility.distanceKm)})`,
-    },
+    { icon: MapPin, label: SHEET_FIELD_LABELS.location, value: facility.roadNameAddress },
     { icon: Building2, label: SHEET_FIELD_LABELS.category, value: facility.category },
     { icon: Info, label: SHEET_FIELD_LABELS.info, value: SHEET_INFO_VALUE },
   ];
@@ -31,7 +32,17 @@ function FacilityBottomSheet({ facility, onClose }: FacilityBottomSheetProps) {
       </div>
 
       <div className="flex items-center justify-between py-1 pr-3 pl-5">
-        <h2 className="text-text-primary text-title">{facility.name}</h2>
+        {/* 이름이 길면 거리 칩이 다음 줄로 내려간다 */}
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+          <h2 className="text-text-primary text-title">{facility.name}</h2>
+          <p
+            aria-label={`${SHEET_DISTANCE_PREFIX} ${formatDistance(facility.distanceKm)}`}
+            className="bg-surface-subtle text-text-secondary text-note-title rounded-pill inline-flex shrink-0 items-center gap-1 px-2.5 py-0.5"
+          >
+            <House size={14} aria-hidden />
+            {formatDistance(facility.distanceKm)}
+          </p>
+        </div>
         <button
           type="button"
           onClick={onClose}
