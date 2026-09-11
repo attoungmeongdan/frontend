@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, LoaderCircle, TriangleAlert } from "lucide-react";
 import ActivityCalendar from "@/components/calendar/ActivityCalendar";
+import TodayReport from "@/components/group/TodayReport";
 import MascotSpeech from "@/components/common/MascotSpeech";
 import ToastHost from "@/components/common/ToastHost";
 import GroupBar from "@/components/group/GroupBar";
@@ -13,21 +14,33 @@ import RankStrip from "@/components/group/RankStrip";
 import Button from "@/components/ui/Button";
 import { GROUP_ERROR, GROUP_MASCOT_MESSAGES, GROUP_PENDING, GROUP_TOAST } from "@/constants/group";
 import {
+  useGroupDailyWorkout,
   useGroupInviteLink,
+  useGroupMonthlyWorkout,
   useGroupMutations,
   useMyGroups,
   useSelectedGroup,
 } from "@/hooks/useGroups";
-import { useMonthlyActivity } from "@/hooks/useMonthlyActivity";
-import { useMyProfile } from "@/hooks/useMyPage";
 import { useToast } from "@/hooks/useToast";
 import type { CreateGroupRequest } from "@/apis/group";
 import type { GroupTab } from "@/types/group";
-import { parseSeoulDate, getSeoulToday } from "@/utils/date";
+import { getSeoulToday } from "@/utils/date";
 import { toGroupErrorMessage } from "@/utils/groupError";
+import { toMemberActivity, toRankedMembers, toReportSections } from "@/utils/groupWorkout";
 import { copyText } from "@/utils/share";
 
 type OpenSheet = "groups" | "create" | "settings" | null;
+
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+/** "9월 12일 (금) · 오늘" */
+function formatTodayLabel({ year, month, date }: ReturnType<typeof getSeoulToday>) {
+  const weekday = WEEKDAY_LABELS[new Date(year, month - 1, date).getDay()];
+
+  return `${month}월 ${date}일 (${weekday}) · 오늘`;
+}
 
 /** 연·월을 한 달 옮긴다. 12월 → 1월 처럼 해가 바뀌는 경우를 함께 처리한다 */
 function shiftMonth(year: number, month: number, delta: number) {
@@ -41,13 +54,7 @@ function GroupPage() {
   const seoulToday = getSeoulToday();
   const [view, setView] = useState({ year: seoulToday.year, month: seoulToday.month });
 
-  // 캘린더는 내 기록을 그대로 쓴다. 팀원별 기록 API 는 아직 없다
-  const { data: profile } = useMyProfile();
-  const joinedAt = parseSeoulDate(profile?.createdAt);
-  const isJoinedMonth =
-    joinedAt !== null && view.year === joinedAt.year && view.month === joinedAt.month;
   const isCurrentMonth = view.year === seoulToday.year && view.month === seoulToday.month;
-  const { activity } = useMonthlyActivity(view.year, view.month, joinedAt);
   const mutations = useGroupMutations();
 
   const groupsQuery = useMyGroups();
@@ -78,12 +85,42 @@ function GroupPage() {
     setSelectedMemberId(group.members[0]?.id ?? null);
   }, [group, selectedMemberId]);
 
+  // 오늘 탭은 그날 기록, 이번 달 탭은 순위를 위해 한 달 누적을 본다. 보고 있는 탭만 부른다
+  const monthKey = `${view.year}-${pad(view.month)}`;
+  // 오늘·이번 달은 서버 기본값이라 파라미터를 비워 보낸다
+  const dailyQuery = useGroupDailyWorkout(currentGroupId, undefined, tab === "today");
+  const monthlyQuery = useGroupMonthlyWorkout(
+    currentGroupId,
+    isCurrentMonth ? undefined : monthKey,
+    tab === "month",
+  );
+
   const inviteLinkQuery = useGroupInviteLink(
     currentGroupId,
     openSheet === "settings" && Boolean(group?.isOwner),
   );
 
-  const selectedMember = group?.members.find((member) => member.id === selectedMemberId);
+  const monthly = monthlyQuery.data;
+  const rankedMembers = monthly ? toRankedMembers(monthly.members) : (group?.members ?? []);
+  // 아직 아무도 안 골랐거나 고른 사람이 목록에 없으면 1등을 본다.
+  // 이 자리를 비워 두면 캘린더가 조용히 사라진다
+  const activeMemberId =
+    rankedMembers.find((member) => member.id === selectedMemberId)?.id ?? rankedMembers[0]?.id;
+  const selectedMember = rankedMembers.find((member) => member.id === activeMemberId);
+
+  // 선택한 팀원의 일별 기록으로 캘린더를 그린다. 별도 요청 없이 월별 응답에 들어 있다
+  const selectedSummary =
+    monthly?.members.find((member) => member.userId === activeMemberId) ?? monthly?.members[0];
+  const memberActivity =
+    monthly && selectedSummary
+      ? toMemberActivity(
+          selectedSummary,
+          view.year,
+          view.month,
+          monthly.daysInMonth,
+          isCurrentMonth ? seoulToday.date : null,
+        )
+      : null;
 
   const closeSheet = () => setOpenSheet(null);
 
@@ -164,7 +201,7 @@ function GroupPage() {
   const hasGroup = (groups?.length ?? 0) > 0;
 
   // 1등을 보고 있으면 그룹 전체 멘트, 다른 팀원을 고르면 그 사람 멘트로 바뀐다
-  const isFirstMemberSelected = selectedMemberId === group?.members[0]?.id;
+  const isFirstMemberSelected = activeMemberId === rankedMembers[0]?.id;
   const message = !hasGroup
     ? GROUP_MASCOT_MESSAGES.empty
     : !group
@@ -196,29 +233,45 @@ function GroupPage() {
             {tab === "month" ? (
               <>
                 <RankStrip
-                  members={group.members}
-                  selectedMemberId={selectedMemberId ?? 0}
+                  members={rankedMembers}
+                  selectedMemberId={activeMemberId ?? 0}
                   onSelect={setSelectedMemberId}
-                  isRanked
+                  isRanked={Boolean(monthly)}
                 />
-                {activity && (
+                {memberActivity && (
                   <ActivityCalendar
-                    activity={activity}
+                    activity={memberActivity}
                     onPrevMonth={() =>
                       setView((current) => shiftMonth(current.year, current.month, -1))
                     }
                     onNextMonth={() =>
                       setView((current) => shiftMonth(current.year, current.month, 1))
                     }
-                    canGoPrev={!isJoinedMonth}
+                    canGoPrev
                     canGoNext={!isCurrentMonth}
                     variant="group"
                   />
                 )}
+                {!memberActivity && monthlyQuery.isPending && <InlineSpinner />}
+                {!memberActivity && !monthlyQuery.isPending && (
+                  <PendingPanel title={GROUP_PENDING.calendar} />
+                )}
               </>
-            ) : (
-              /* 오늘 리포트 API 는 아직 없어 자리만 잡아 둔다 */
+            ) : dailyQuery.data ? (
+              <TodayReport
+                dateLabel={formatTodayLabel(seoulToday)}
+                sections={toReportSections(dailyQuery.data.exercises)}
+              />
+            ) : dailyQuery.isError ? (
               <PendingPanel title={GROUP_PENDING.todayReport} />
+            ) : (
+              <div className="flex min-h-40 items-center justify-center">
+                <LoaderCircle
+                  size={24}
+                  aria-hidden
+                  className="text-brand-teal-strong animate-spin"
+                />
+              </div>
             )}
           </>
         )}
@@ -274,6 +327,15 @@ function GroupPage() {
 
       <ToastHost message={toast.message} />
     </>
+  );
+}
+
+/** 본문 안에서 잠깐 기다릴 때 */
+function InlineSpinner() {
+  return (
+    <div className="flex min-h-40 items-center justify-center">
+      <LoaderCircle size={24} aria-hidden className="text-brand-teal-strong animate-spin" />
+    </div>
   );
 }
 
