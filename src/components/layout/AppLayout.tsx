@@ -10,8 +10,11 @@ function AppLayout() {
 
   return (
     <div className="bg-surface-subtle flex h-dvh justify-center">
+      {/* PWA(standalone)에서는 상태바가 화면 위로 겹쳐 들어온다.
+          safe-area 만큼 밀어내야 헤더가 상태바에 가리지 않는다.
+          브라우저에서는 inset 이 0 이라 지금과 똑같이 보인다 */}
       <div
-        className={`bg-surface-default flex h-full w-full flex-col overflow-hidden ${fullViewport ? "" : "max-w-shell"}`}
+        className={`bg-surface-default flex h-full w-full flex-col overflow-hidden pt-[env(safe-area-inset-top)] ${fullViewport ? "" : "max-w-shell"}`}
       >
         {header !== false && (
           <Header
