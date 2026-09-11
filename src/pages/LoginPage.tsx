@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { getAuthorizeUrl, type SocialProvider } from "@/apis/auth";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import Toast from "@/components/ui/Toast";
-import wordmark from "@/assets/logo/fittle-wordmark.webp";
+import wordmark from "@/assets/logo/fittle-wordmark.png";
 
 type LoginStatus = "idle" | "loading" | "error";
 

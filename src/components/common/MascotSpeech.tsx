@@ -1,4 +1,4 @@
-import turtleGuide from "@/assets/mascots/turtle-guide.webp";
+import turtleGuide from "@/assets/mascots/turtle-guide.png";
 
 interface MascotSpeechProps {
   message: string;
