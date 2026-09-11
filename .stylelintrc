@@ -67,7 +67,15 @@
     "at-rule-no-unknown": [
       true,
       {
-        "ignoreAtRules": ["theme", "utility", "layer", "tailwind", "apply", "config"]
+        "ignoreAtRules": [
+        "theme",
+        "utility",
+        "layer",
+        "tailwind",
+        "apply",
+        "config",
+        "custom-variant"
+      ]
       }
     ]
   }
