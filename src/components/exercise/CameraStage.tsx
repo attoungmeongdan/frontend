@@ -14,6 +14,8 @@ interface CameraStageProps {
   subInfo?: string;
   /** 카메라 위에 올리는 상태 표시 (자세 인식 안내 토스트·저장 중) */
   overlay?: ReactNode;
+  /** 실제 카메라 영상과 스켈레톤 캔버스 */
+  cameraFeed?: ReactNode;
   warning?: CameraWarning;
   cancelLabel?: string;
   /** 기록 저장 중처럼 화면을 떠나면 안 되는 동안 뒤로가기를 막는다 */
@@ -21,6 +23,7 @@ interface CameraStageProps {
   onCancel: () => void;
   /** 넘길 때만 운동 종료 버튼을 표시한다. 체력 측정은 수동 종료가 없다 */
   onEnd?: () => void;
+  children?: ReactNode;
 }
 
 const WARNING_MESSAGE: Record<CameraWarning, string> = {
@@ -35,11 +38,13 @@ function CameraStage({
   stageLabel,
   subInfo,
   overlay,
+  cameraFeed,
   warning,
   cancelLabel = "운동을 취소하고 홈으로 돌아가기",
   cancelDisabled = false,
   onCancel,
   onEnd,
+  children,
 }: CameraStageProps) {
   const valueClassName =
     valueKind === "count"
@@ -51,12 +56,14 @@ function CameraStage({
       aria-label={stageLabel ? `${stageLabel} 카메라` : `${exerciseName} 자유 운동 카메라`}
       className="bg-camera-backdrop relative h-full min-h-80 overflow-hidden text-white"
     >
-      <div className="absolute inset-0 flex items-center justify-center opacity-8" aria-hidden>
-        <div className="flex flex-col items-center gap-2 landscape:flex-row landscape:gap-3">
-          <div className="size-16 rounded-full bg-white landscape:size-14" />
-          <div className="h-52 w-22 rounded-[40px] bg-white landscape:h-20 landscape:w-45" />
+      {cameraFeed ?? (
+        <div className="absolute inset-0 flex items-center justify-center opacity-8" aria-hidden>
+          <div className="flex flex-col items-center gap-2 landscape:flex-row landscape:gap-3">
+            <div className="size-16 rounded-full bg-white landscape:size-14" />
+            <div className="h-52 w-22 rounded-[40px] bg-white landscape:h-20 landscape:w-45" />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 안내 모달(z-50)이 떠 있어도 뒤로가기는 누를 수 있도록 모달보다 위에 둔다 */}
       <button
@@ -123,6 +130,7 @@ function CameraStage({
           </Button>
         </div>
       )}
+      {children}
     </section>
   );
 }
