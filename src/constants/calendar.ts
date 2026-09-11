@@ -12,14 +12,14 @@ export const MASCOT_MESSAGES = {
   todayOnly: "오늘 몸을 움직이셨네요.\n함께해서 반가워요!",
   /** 어제 X · 오늘 X, 이번 달 기록 없음 포함 */
   neither: "편한 때 가볍게 시작해 볼까요?",
+  /** 지난달을 볼 때 */
+  pastMonth: "지난 기록을 함께 살펴봐요.",
   /** 1일. 어제가 전월이라 조합을 따지지 않는다 */
   monthStart: "새 달이 시작됐어요.\n편한 때 함께해요.",
   loading: "기록을 살펴보고 있어요.",
   error: "잠시만요, 다시 한 번 볼게요.",
 } as const;
 
-export const RATE_CARD_TITLE = "이번 달 운동 실행률";
-export const RATE_EMPTY_DESCRIPTION = "이번 달 기록이 아직 없어요";
 /** 월초에는 실행률 대신 표시 */
 export const RATE_UNAVAILABLE = "—";
 
@@ -29,4 +29,4 @@ export const ERROR_DESCRIPTION = "잠시 후 다시 시도해 주세요. 기록 
 export const ERROR_RETRY_LABEL = "다시 불러오기";
 
 export const LEGEND_EXERCISED_LABEL = "운동 1~4개";
-export const LEGEND_TODAY_LABEL = "오늘";
+export const LEGEND_MEASURED_LABEL = "체력 측정 완료";
