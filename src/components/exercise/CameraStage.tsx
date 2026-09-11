@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowLeft, OctagonX, TriangleAlert } from "lucide-react";
 import Button from "@/components/ui/Button";
+import "./CameraStage.css";
 
 export type CameraWarning = "no-body" | "bad-pose";
 
@@ -54,7 +55,7 @@ function CameraStage({
   return (
     <section
       aria-label={stageLabel ? `${stageLabel} 카메라` : `${exerciseName} 자유 운동 카메라`}
-      className="bg-camera-backdrop relative h-full min-h-80 overflow-hidden text-white"
+      className="camera-stage bg-camera-backdrop relative h-full min-h-0 overflow-hidden text-white"
     >
       {cameraFeed ?? (
         <div className="absolute inset-0 flex items-center justify-center opacity-8" aria-hidden>
@@ -65,25 +66,24 @@ function CameraStage({
         </div>
       )}
 
-      {/* 안내 모달(z-50)이 떠 있어도 뒤로가기는 누를 수 있도록 모달보다 위에 둔다 */}
-      <button
-        type="button"
-        aria-label={cancelLabel}
-        onClick={onCancel}
-        disabled={cancelDisabled}
-        className="absolute top-[max(0.5rem,env(safe-area-inset-top))] left-[max(0.5rem,env(safe-area-inset-left))] z-60 flex size-11 items-center justify-center rounded-full bg-black/25 disabled:opacity-40"
-      >
-        <ArrowLeft size={24} aria-hidden />
-      </button>
-
-      {/* 좁은 화면에서는 뒤로가기 버튼과 겹치지 않도록 오른쪽 여백만 줄인다 */}
-      <div className="absolute inset-x-14 top-[max(1rem,env(safe-area-inset-top))] z-10 flex justify-center max-[22rem]:right-2 landscape:top-[max(0.875rem,env(safe-area-inset-top))]">
-        <div className="rounded-pill text-note-title bg-camera-overlay px-3.5 py-1.5 text-center whitespace-nowrap">
-          {stageLabel ?? `자유 운동 · ${exerciseName}`}
+      <header className="camera-stage-header relative z-60 flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          aria-label={cancelLabel}
+          onClick={onCancel}
+          disabled={cancelDisabled}
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-black/25 disabled:opacity-40"
+        >
+          <ArrowLeft size={24} aria-hidden />
+        </button>
+        <div className="flex min-w-0 flex-1 justify-center pr-14">
+          <div className="rounded-pill text-note-title bg-camera-overlay px-3.5 py-1.5 text-center break-keep">
+            {stageLabel ?? `자유 운동 · ${exerciseName}`}
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="absolute top-16 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 text-center landscape:top-12 landscape:gap-0.5">
+      <div className="camera-stage-metrics relative z-10 flex min-w-0 flex-col items-center justify-center gap-1 text-center landscape:gap-0.5">
         <output
           aria-label={valueKind === "timer" ? `운동 시간 ${value}` : `운동 횟수 ${value}`}
           className={`${valueClassName} tabular-nums drop-shadow-sm`}
@@ -91,7 +91,7 @@ function CameraStage({
           {value}
         </output>
         {subInfo && (
-          <p className="text-body landscape:text-body-small font-semibold whitespace-nowrap text-white/80">
+          <p className="text-body landscape:text-body-small max-w-full font-semibold break-keep text-white/80">
             {subInfo}
           </p>
         )}
@@ -99,32 +99,32 @@ function CameraStage({
 
       {overlay}
 
-      {/* 경고는 화면 가운데 위 레이어에 띄운다. 반투명 아이콘 바로 아래에 문구를 붙이고, 다른 요소 배치와 조작에는 영향을 주지 않는다 */}
+      {/* 가이드와 경고는 측정값·종료 버튼이 차지하는 영역 밖에 배치한다. */}
       {warning && (
         <div
           role="alert"
-          className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center px-4"
+          className="camera-stage-view pointer-events-none relative z-20 flex flex-col items-center justify-center gap-2 overflow-hidden"
         >
-          <div className="opacity-50" aria-hidden>
+          <div className="flex min-h-0 w-full flex-1 justify-center opacity-50" aria-hidden>
             <TriangleAlert
               size={288}
               strokeWidth={2.25}
-              className="text-accent-yellow motion-safe:animate-pulse landscape:size-[min(15.75rem,calc(150dvh-18.75rem))]"
+              className="text-accent-yellow h-full max-h-72 w-full motion-safe:animate-pulse"
             />
           </div>
-          <p className="bg-camera-scrim text-body-small -mt-2 rounded-sm px-4 py-2 text-center font-semibold">
+          <p className="bg-camera-scrim text-body-small shrink-0 rounded-sm px-4 py-2 text-center font-semibold break-keep">
             {WARNING_MESSAGE[warning]}
           </p>
         </div>
       )}
 
       {onEnd && (
-        <div className="absolute inset-x-0 bottom-[max(2.25rem,env(safe-area-inset-bottom))] z-10 flex justify-center landscape:bottom-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="camera-stage-footer relative z-10 flex justify-center">
           <Button
             type="button"
             onClick={onEnd}
             leadingIcon={OctagonX}
-            className="w-60 landscape:w-55"
+            className="w-60 max-w-full landscape:w-full"
           >
             운동 종료
           </Button>

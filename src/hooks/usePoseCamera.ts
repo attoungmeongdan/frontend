@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NormalizedLandmark, PoseLandmarker } from "@mediapipe/tasks-vision";
-import type { ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise";
+import type { ExerciseCameraState, PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 const MEDIAPIPE_VERSION = "1.0.1";
 const WASM_BASE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
@@ -15,7 +15,7 @@ interface PoseCameraDiagnostics {
 }
 
 interface UsePoseCameraOptions {
-  onPoseFrame: (landmarks: PoseLandmarkPayload[]) => void;
+  onPoseFrame: (landmarks: PoseLandmarkPayload[], frameSize: PoseFrameSize) => void;
 }
 
 function cameraErrorState(error: unknown): ExerciseCameraState {
@@ -216,7 +216,11 @@ export function usePoseCamera({ onPoseFrame }: UsePoseCameraOptions) {
         }
 
         updateState(landmarks.length === 33 ? "normal" : "no-body");
-        if (landmarks.length === 33) onPoseFrameRef.current(toPayload(landmarks));
+        // Empty frames also break a pending start-pose streak when the body disappears.
+        onPoseFrameRef.current(toPayload(landmarks), {
+          width: video.videoWidth,
+          height: video.videoHeight,
+        });
 
         frameCount += 1;
         const now = performance.now();
