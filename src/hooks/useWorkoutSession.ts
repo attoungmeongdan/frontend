@@ -154,7 +154,12 @@ export function useWorkoutSession({
       setConnectionError(null);
       setRetryAction("start");
       updateConnectionState("idle");
+      // 이번 운동이 반영된 화면들을 모두 낡은 것으로 표시한다.
+      // 안 하면 그룹·캘린더가 예전 값을 들고 있어 화면을 나갔다 들어와야 갱신된다
       void queryClient.invalidateQueries({ queryKey: ["recent-seven-days"] });
+      void queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      // 그룹 목록·멤버·일별/월별 운동량이 모두 이 키로 시작한다
+      void queryClient.invalidateQueries({ queryKey: ["groups"] });
       onCompletedRef.current(sessionId, completedMeasurementGroupId);
     },
     [closeSocket, queryClient, updateConnectionState],
