@@ -116,14 +116,21 @@ export function usePoseCamera({ onPoseFrame }: UsePoseCameraOptions) {
     );
 
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) {
+      stop();
+      return;
+    }
     video.srcObject = stream;
 
     try {
       await video.play();
+      if (runId !== runIdRef.current) return;
       setDiagnostics((current) => ({ ...current, cameraReady: true }));
     } catch (error) {
-      if (runId === runIdRef.current) updateState(cameraErrorState(error));
+      if (runId === runIdRef.current) {
+        stop();
+        updateState(cameraErrorState(error));
+      }
       return;
     }
 
@@ -159,7 +166,10 @@ export function usePoseCamera({ onPoseFrame }: UsePoseCameraOptions) {
       DrawingUtilsClass = DrawingUtils;
       poseConnections = PoseLandmarkerClass.POSE_CONNECTIONS;
     } catch {
-      if (runId === runIdRef.current) updateState("model-error");
+      if (runId === runIdRef.current) {
+        stop();
+        updateState("model-error");
+      }
       return;
     }
 
@@ -192,6 +202,7 @@ export function usePoseCamera({ onPoseFrame }: UsePoseCameraOptions) {
         try {
           result = landmarker.detectForVideo(video, inferenceStartedAt);
         } catch {
+          stop();
           updateState("model-error");
           return;
         }

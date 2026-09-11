@@ -20,6 +20,8 @@ export interface DailyRecord {
   date: string;
   /** 그날 완료한 서로 다른 운동 종류 수 (0~4) */
   exerciseCount: number;
+  /** 완료한 체력 측정 그룹 UUID. 구버전 응답에서는 생략될 수 있다. */
+  measurementGroupId?: string | null;
 }
 
 /** GET /api/v1/calendars */

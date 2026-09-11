@@ -16,6 +16,7 @@ import turtleComplete from "@/assets/mascots/turtle-today-complete.png";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { measurementAnalysisPath } from "@/utils/measurementRoutes";
 import type { ExerciseCameraState, PoseFrameSize, PoseLandmarkPayload } from "@/types/exercise";
 
 const formatTime = (ms: number) => {
@@ -77,7 +78,7 @@ function MeasurePage() {
     phase === "loading" ||
     session.connectionState === "connecting" ||
     session.connectionState === "completing";
-  const analysisPath = groupId ? `/measurements/${groupId}/analysis` : null;
+  const analysisPath = groupId ? measurementAnalysisPath(groupId) : null;
   const blocker = useBlocker(({ nextLocation }) =>
     phase === "complete" ? nextLocation.pathname !== analysisPath : busy,
   );
@@ -133,7 +134,7 @@ function MeasurePage() {
       ? undefined
       : camera.state === "no-body"
         ? "no-body"
-        : feedback
+        : feedback || session.connectionError
           ? "bad-pose"
           : undefined;
   const value = cameraReady
@@ -156,7 +157,13 @@ function MeasurePage() {
       </div>
     );
   else if (phase === "pose-waiting" && session.connectionState === "idle")
-    overlay = <StartPoseGuide exerciseType={step.exercise} isMatching={startPose.isMatching} />;
+    overlay = (
+      <StartPoseGuide
+        mode="MEASUREMENT"
+        exerciseType={step.exercise}
+        isMatching={startPose.isMatching}
+      />
+    );
   else if (session.connectionState === "connecting" || session.connectionState === "completing")
     overlay = (
       <div className="bg-camera-overlay absolute inset-0 z-30 flex items-center justify-center">
@@ -175,7 +182,10 @@ function MeasurePage() {
     overlay = (
       <div className="bg-camera-overlay absolute inset-0 z-30 flex items-center justify-center px-6">
         <div className="rounded-card flex max-w-84 flex-col gap-4 bg-white p-5 text-center">
-          <p role="alert">{session.connectionError}</p>
+          <p role="alert" className="text-text-primary break-keep">
+            {session.connectionError ??
+              "측정 기록을 확인하지 못했어요. 잠시 후 다시 확인해 주세요."}
+          </p>
           <Button type="button" onClick={retrySession} leadingIcon={RefreshCw}>
             {session.retryLabel}
           </Button>

@@ -26,15 +26,13 @@ function toMonthlyActivity(
     // 가입한 달을 볼 때만 가입일을 넣어 그 전날까지 가린다
     joinedDay: joinedAt && isSameMonth(response, joinedAt) ? joinedAt.date : null,
     totalTargetDays: response.totalTargetDays,
-    // 응답은 운동 안 한 날(0)도 모두 담고 있어 실제 수행한 날만 남긴다
+    // 측정만 한 날도 리포트 진입점이다. 실행률은 서버 응답을 그대로 사용한다.
     exercisedDays: response.dailyRecords
-      .filter((record) => record.exerciseCount > 0)
+      .filter((record) => record.exerciseCount > 0 || !!record.measurementGroupId)
       .map((record) => ({
         day: toDayOfMonth(record.date),
         count: record.exerciseCount,
-        // TODO: 응답에 측정 id 가 없어 항상 null 이다.
-        //       달력의 측정 표시와 분석 화면 이동은 서버가 내려줘야 붙일 수 있다.
-        measurementId: null,
+        measurementGroupId: record.measurementGroupId ?? null,
       })),
   };
 }

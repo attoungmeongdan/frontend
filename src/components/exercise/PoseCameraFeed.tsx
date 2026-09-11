@@ -6,8 +6,8 @@ interface PoseCameraFeedProps {
 }
 
 function PoseCameraFeed({ videoRef, canvasRef }: PoseCameraFeedProps) {
-  // Use the same intrinsic frame, fit and mirror for both layers. Contain keeps
-  // detected joints visible when the source and viewport aspect ratios differ.
+  // Fill the viewport with identical centered cropping and mirroring on both
+  // layers. Canvas intrinsic dimensions remain those of the source video.
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" aria-hidden>
       <video
@@ -15,11 +15,11 @@ function PoseCameraFeed({ videoRef, canvasRef }: PoseCameraFeedProps) {
         autoPlay
         muted
         playsInline
-        className="absolute inset-0 h-full w-full scale-x-[-1] object-contain"
+        className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
       />
       <canvas
         ref={canvasRef}
-        className="pointer-events-none absolute inset-0 h-full w-full scale-x-[-1] object-contain"
+        className="pointer-events-none absolute inset-0 h-full w-full scale-x-[-1] object-cover"
       />
       <div className="absolute inset-0 bg-black/10" />
     </div>

@@ -19,10 +19,16 @@ import type {
   PoseLandmarkPayload,
 } from "@/types/exercise";
 
+import {
+  CompletionPendingError,
+  SessionResultMismatchError,
+  readCompletion,
+  reportSessionError,
+} from "@/utils/completionVerification";
 import { withMinimumDuration } from "@/utils/minimumDuration";
 
 type WorkoutConnectionState = "idle" | "connecting" | "active" | "completing" | "error";
-type RetryAction = "start" | "complete" | "verify";
+type RetryAction = "start" | "verify";
 
 interface WorkoutDiagnostics {
   sessionId: number | null;
@@ -92,6 +98,9 @@ export function useWorkoutSession({
   const lastTimestampRef = useRef(0);
   const nextSendAtRef = useRef<number | null>(null);
   const completedRef = useRef(false);
+  const completionRequestedRef = useRef(false);
+  const completionSignalledRef = useRef(false);
+  const verificationRef = useRef<AbortController | null>(null);
   const shouldResumeRef = useRef(false);
   const measurementTimedOutRef = useRef(false);
   const onCompletedRef = useRef(onCompleted);
@@ -160,7 +169,7 @@ export function useWorkoutSession({
       result.exerciseType !== session.exerciseType ||
       result.measurementGroupId !== session.measurementGroupId
     ) {
-      throw new Error("현재 운동 세션의 저장 결과가 아니에요.");
+      throw new SessionResultMismatchError("현재 운동 세션의 저장 결과가 아니에요.");
     }
   }, []);
 
@@ -168,33 +177,58 @@ export function useWorkoutSession({
     async (sessionId: number, storedResult?: ExerciseSessionResult) => {
       if (connectionStateRef.current === "completing" || completedRef.current) return;
       const attempt = attemptRef.current;
+      const controller = new AbortController();
+      verificationRef.current?.abort();
+      verificationRef.current = controller;
+      let resumed = false;
       setConnectionError(null);
       updateConnectionState("completing");
       try {
-        await withMinimumDuration(async () => {
-          const result = storedResult ?? (await getWorkoutSessionResult(sessionId));
-          if (attempt !== attemptRef.current || sessionRef.current?.sessionId !== sessionId) return;
-          validateStoredResult(result, sessionId);
-          if (result.status === "EXPIRED" || result.status === "CANCELLED") {
-            closeSocket();
-            sessionRef.current = null;
-            throw new Error(
-              mode === "MEASUREMENT"
-                ? "측정 연결이 종료됐어요. 이전 운동 기록을 유지하고 시작 자세를 다시 잡아 주세요."
-                : "운동 연결이 종료됐어요. 시작 자세를 다시 잡아 주세요.",
-            );
-          }
-          if (result.status !== "COMPLETED") {
-            throw new Error(
-              "서버에서 운동 기록 완료를 확인하지 못했어요. 잠시 후 다시 확인해 주세요.",
-            );
-          }
-          // Socket events and polling must both verify the measurement's persisted progress.
-          await verifyCompletionRef.current?.(result);
-        }, minimumPendingMs);
-        if (attempt === attemptRef.current) moveToCompleted(sessionId);
+        await withMinimumDuration(
+          () =>
+            readCompletion(async (signal) => {
+              const result = storedResult ?? (await getWorkoutSessionResult(sessionId, signal));
+              storedResult = undefined;
+              if (attempt !== attemptRef.current || sessionRef.current?.sessionId !== sessionId)
+                return;
+              validateStoredResult(result, sessionId);
+              if (result.status === "EXPIRED" || result.status === "CANCELLED") {
+                closeSocket();
+                sessionRef.current = null;
+                throw new Error(
+                  mode === "MEASUREMENT"
+                    ? "측정 연결이 종료됐어요. 이전 운동 기록을 유지하고 시작 자세를 다시 잡아 주세요."
+                    : "운동 연결이 종료됐어요. 시작 자세를 다시 잡아 주세요.",
+                );
+              }
+              if (result.status !== "COMPLETED") {
+                // A recoverable read failure is not the end of a live measurement.
+                if (
+                  mode === "MEASUREMENT" &&
+                  !completionSignalledRef.current &&
+                  !measurementTimedOutRef.current &&
+                  socketRef.current?.readyState === WebSocket.OPEN
+                ) {
+                  resumed = true;
+                  return;
+                }
+                throw new CompletionPendingError(
+                  "서버에서 운동 기록 완료를 확인하지 못했어요. 잠시 후 다시 확인해 주세요.",
+                );
+              }
+              completionSignalledRef.current = true;
+              // Socket events and polling must both verify the measurement's persisted progress.
+              await verifyCompletionRef.current?.(result);
+            }, controller.signal),
+          minimumPendingMs,
+        );
+        if (attempt !== attemptRef.current || controller.signal.aborted) return;
+        if (resumed) updateConnectionState("active");
+        else moveToCompleted(sessionId);
       } catch (error) {
-        if (attempt !== attemptRef.current || completedRef.current) return;
+        if (attempt !== attemptRef.current || completedRef.current || controller.signal.aborted)
+          return;
+        reportSessionError("verify-completion", sessionId, error);
         setConnectionError(errorMessage(error, "완료된 운동 기록을 확인하지 못했어요."));
         setRetryAction(sessionRef.current ? "verify" : "start");
         updateConnectionState("error");
@@ -216,6 +250,7 @@ export function useWorkoutSession({
     const sessionId = sessionRef.current?.sessionId;
     if (!sessionId) return;
     const attempt = attemptRef.current;
+    const controller = new AbortController();
     let cancelled = false;
     let failures = 0;
     let pendingAfterTimeout = 0;
@@ -227,7 +262,7 @@ export function useWorkoutSession({
       connectionStateRef.current === "active";
     const poll = async () => {
       try {
-        const result = await getWorkoutSessionResult(sessionId);
+        const result = await getWorkoutSessionResult(sessionId, controller.signal);
         if (!isCurrent()) return;
         validateStoredResult(result, sessionId);
         if (["COMPLETED", "EXPIRED", "CANCELLED"].includes(result.status)) {
@@ -242,11 +277,24 @@ export function useWorkoutSession({
       } catch (error) {
         if (!isCurrent()) return;
         failures += 1;
-        if (failures >= 3 || pendingAfterTimeout >= 4) {
+        if (
+          failures >= 3 ||
+          pendingAfterTimeout >= 4 ||
+          error instanceof SessionResultMismatchError
+        ) {
+          reportSessionError("poll-result", sessionId, error);
           setConnectionError(errorMessage(error, "측정 결과를 확인하지 못했어요."));
-          setRetryAction("verify");
-          updateConnectionState("error");
-          return;
+          // Result API outages must not stop a healthy socket's pose stream.
+          // Keep polling until the server finishes or the connection closes.
+          if (
+            pendingAfterTimeout >= 4 ||
+            error instanceof SessionResultMismatchError ||
+            socketRef.current?.readyState !== WebSocket.OPEN
+          ) {
+            setRetryAction("verify");
+            updateConnectionState("error");
+            return;
+          }
         }
       }
       if (isCurrent()) timer = setTimeout(() => void poll(), 3_000);
@@ -254,6 +302,7 @@ export function useWorkoutSession({
     timer = setTimeout(() => void poll(), 3_000);
     return () => {
       cancelled = true;
+      controller.abort();
       clearTimeout(timer);
     };
   }, [connectionState, mode, updateConnectionState, validateStoredResult, verifyCompletedResult]);
@@ -277,6 +326,7 @@ export function useWorkoutSession({
         "sessionId" in message &&
         message.sessionId === sessionId
       ) {
+        completionSignalledRef.current = true;
         void verifyCompletedResult(sessionId);
         return;
       }
@@ -285,9 +335,10 @@ export function useWorkoutSession({
 
       if (message.type === "ERROR") {
         setConnectionError(message.message || "자세 판정 중 오류가 발생했어요.");
-        if (mode === "MEASUREMENT" && message.code === "EXERCISE_PROCESSING_FAILED") {
-          void verifyCompletedResult(sessionId);
-        }
+        // The server keeps the socket open on frame-processing errors. Keep
+        // sending fresh frames; the existing result poll reconciles persisted
+        // completion without turning a transient frame failure into a deadlock.
+        reportSessionError("socket-frame", sessionId, message);
         return;
       }
 
@@ -364,6 +415,9 @@ export function useWorkoutSession({
     lastTimestampRef.current = 0;
     nextSendAtRef.current = null;
     completedRef.current = false;
+    completionRequestedRef.current = false;
+    completionSignalledRef.current = false;
+    verificationRef.current?.abort();
     measurementTimedOutRef.current = false;
     setAnalysis(null);
     setConnectionError(null);
@@ -410,6 +464,7 @@ export function useWorkoutSession({
       connectSocket(session, attempt);
     } catch (error) {
       if (attempt !== attemptRef.current) return;
+      reportSessionError("create-session", null, error);
       setConnectionError(errorMessage(error, "운동 세션을 시작하지 못했어요."));
       setRetryAction("start");
       updateConnectionState("error");
@@ -476,44 +531,32 @@ export function useWorkoutSession({
     const sessionId = sessionRef.current?.sessionId;
     if (!sessionId || connectionStateRef.current === "completing" || completedRef.current) return;
 
+    if (completionRequestedRef.current) {
+      void verifyCompletedResult(sessionId);
+      return;
+    }
     const attempt = attemptRef.current;
+    completionRequestedRef.current = true;
     updateConnectionState("completing");
     setConnectionError(null);
     try {
-      const result: ExerciseSessionResult = await completeWorkoutSession(sessionId);
+      const result = await completeWorkoutSession(sessionId);
       if (attempt !== attemptRef.current) return;
-      if (result.status !== "COMPLETED") {
-        throw new Error("운동 기록 저장이 아직 완료되지 않았어요.");
+      validateStoredResult(result, sessionId);
+      if (result.status === "COMPLETED") {
+        moveToCompleted(sessionId);
+        return;
       }
-      moveToCompleted(sessionId);
     } catch (error) {
       if (attempt !== attemptRef.current) return;
-      try {
-        const result = await getWorkoutSessionResult(sessionId);
-        if (attempt !== attemptRef.current) return;
-        if (result.status === "COMPLETED") {
-          moveToCompleted(sessionId);
-          return;
-        }
-        if (result.status === "EXPIRED" || result.status === "CANCELLED") {
-          closeSocket();
-          sessionRef.current = null;
-          setConnectionError(
-            "자세 인식이 오래 끊겨 세션이 종료됐어요. 새 세션으로 다시 시작해 주세요.",
-          );
-          setRetryAction("start");
-          updateConnectionState("error");
-          return;
-        }
-        throw new Error("운동 기록 저장이 아직 완료되지 않았어요.");
-      } catch {
-        if (attempt !== attemptRef.current) return;
-        setConnectionError(errorMessage(error, "운동 기록을 저장하지 못했어요."));
-        setRetryAction("complete");
-        updateConnectionState("error");
-      }
+      reportSessionError("complete-request", sessionId, error);
     }
-  }, [closeSocket, mode, moveToCompleted, updateConnectionState]);
+    // A lost response may hide a successful POST. Reconcile via GET only;
+    // neither repeated clicks nor a result-read failure may resubmit completion.
+    updateConnectionState("error");
+    setRetryAction("verify");
+    await verifyCompletedResult(sessionId);
+  }, [mode, moveToCompleted, updateConnectionState, validateStoredResult, verifyCompletedResult]);
 
   const retry = useCallback(() => {
     if (connectionStateRef.current !== "error") return;
@@ -522,21 +565,19 @@ export function useWorkoutSession({
       void verifyCompletedResult(sessionId);
       return;
     }
-    if (retryAction === "complete") {
-      void complete();
-      return;
-    }
     attemptRef.current += 1;
+    verificationRef.current?.abort();
     closeSocket();
     sessionRef.current = null;
     completedRef.current = false;
     setAnalysis(null);
     setConnectionError(null);
     updateConnectionState("idle");
-  }, [closeSocket, complete, retryAction, updateConnectionState, verifyCompletedResult]);
+  }, [closeSocket, retryAction, updateConnectionState, verifyCompletedResult]);
 
   const cancel = useCallback(() => {
     attemptRef.current += 1;
+    verificationRef.current?.abort();
     closeSocket();
     sessionRef.current = null;
     updateConnectionState("idle");
@@ -545,6 +586,7 @@ export function useWorkoutSession({
   useEffect(
     () => () => {
       attemptRef.current += 1;
+      verificationRef.current?.abort();
       closeSocket();
     },
     [closeSocket],
@@ -554,12 +596,7 @@ export function useWorkoutSession({
     connectionState,
     analysis,
     connectionError,
-    retryLabel:
-      retryAction === "start"
-        ? "세션 다시 시작"
-        : retryAction === "verify"
-          ? "완료 상태 다시 확인"
-          : "저장 다시 시도",
+    retryLabel: retryAction === "start" ? "세션 다시 시작" : "완료 상태 다시 확인",
     shouldReacquireStartPose: retryAction === "start",
     diagnostics,
     socketTicketLength: sessionRef.current?.socketTicket?.length ?? 0,

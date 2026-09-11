@@ -13,6 +13,15 @@ async function setupMeasurement(page: Page, interrupted = false) {
   let exercise = "CHAIR_STAND";
   const order = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"];
   let status = "MEASURING";
+  let resultFailures = 0;
+  let completeRequests = 0;
+  await page.route("**/api/v1/exercise-sessions/*/complete", (route) => {
+    completeRequests++;
+    return route.fulfill({
+      status: 409,
+      json: { message: "Measurement cannot be manually completed" },
+    });
+  });
   let socket: WebSocketRoute;
   const connections: string[] = [];
   const response = (exerciseType: string) => ({
@@ -60,8 +69,15 @@ async function setupMeasurement(page: Page, interrupted = false) {
     exercise = order[saved];
     return route.fulfill({ json: { data: response(exercise) } });
   });
-  await page.route("**/api/v1/exercise-sessions/*/result", (route) =>
-    route.fulfill({
+  await page.route("**/api/v1/exercise-sessions/*/result", (route) => {
+    if (resultFailures > 0) {
+      resultFailures--;
+      return route.fulfill({
+        status: 503,
+        json: { message: "측정 결과 서버에 잠시 연결할 수 없어요." },
+      });
+    }
+    return route.fulfill({
       json: {
         data: {
           sessionId: id,
@@ -71,8 +87,8 @@ async function setupMeasurement(page: Page, interrupted = false) {
           status,
         },
       },
-    }),
-  );
+    });
+  });
   await page.routeWebSocket("**/ws/v1/exercise-sessions/*", (ws) => {
     socket = ws;
     connections.push(ws.url());
@@ -80,6 +96,10 @@ async function setupMeasurement(page: Page, interrupted = false) {
   return {
     requests,
     connections,
+    failResultReads: (count: number) => {
+      resultFailures = count;
+    },
+    completeRequests: () => completeRequests,
     resumeCalls: () => resumeCalls,
     rejectStaleResume: () => {
       rejectNextResume = true;
@@ -100,6 +120,25 @@ async function setupMeasurement(page: Page, interrupted = false) {
                 feedback: [],
               },
         ),
+      );
+    },
+    processingError: () => {
+      socket.send(
+        JSON.stringify({
+          type: "ANALYSIS_RESULT",
+          sessionId: id,
+          remainingTimeMs: 40000,
+          validCount: 8,
+          validDurationMs: 0,
+          feedback: [],
+        }),
+      );
+      socket.send(
+        JSON.stringify({
+          type: "ERROR",
+          code: "EXERCISE_PROCESSING_FAILED",
+          message: "관절 프레임을 처리하지 못했습니다.",
+        }),
       );
     },
     expire: () => {
@@ -133,6 +172,11 @@ test("measurement advances through all exercises when the first completion event
   for (const [index, type] of steps.entries()) {
     await setPose(page, type);
     await expect.poll(() => fixture.connections.length).toBe(index + 1);
+    if (type === "sit-up") {
+      fixture.processingError();
+      await expect(page.getByText("남은 시간 00:40")).toBeVisible();
+      await expect(page.getByRole("button", { name: "완료 상태 다시 확인" })).toHaveCount(0);
+    }
     fixture.complete(index > 0);
     if (index < 3) {
       await page.getByRole("button", { name: "준비됐어요" }).click();
@@ -148,6 +192,7 @@ test("measurement advances through all exercises when the first completion event
     { mode: "MEASUREMENT", exerciseType: "PLANK", measurementGroupId: "group-1" },
   ]);
   expect(fixture.resumeCalls()).toBe(0);
+  expect(fixture.completeRequests()).toBe(0);
 });
 
 test("an interrupted first exercise resumes on entry and restarts with fresh credentials after expiry", async ({
@@ -188,4 +233,26 @@ test("order rejection refreshes the guide and starts the backend's next exercise
   await expect.poll(() => fixture.connections.length).toBe(1);
   expect(fixture.resumeCalls()).toBe(2);
   await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("failed result reads show readable recovery text and retry only verification", async ({
+  page,
+}, testInfo) => {
+  const fixture = await setupMeasurement(page);
+  await enter(page);
+  await setPose(page, "chair-stand");
+  await expect.poll(() => fixture.connections.length).toBe(1);
+  fixture.failResultReads(4);
+  fixture.complete();
+  const retry = page.getByRole("button", { name: "완료 상태 다시 확인" });
+  await expect(retry).toBeVisible({ timeout: 10000 });
+  const message = page.getByRole("alert");
+  await expect(message).toHaveText("측정 결과 서버에 잠시 연결할 수 없어요.");
+  await expect(message).toHaveCSS("color", "rgb(37, 49, 49)");
+  await page.screenshot({ path: testInfo.outputPath("measurement-recovery.png") });
+  await retry.click();
+  await expect(page.getByRole("dialog")).toContainText("팔굽혀펴기");
+  expect(fixture.completeRequests()).toBe(0);
+  expect(fixture.requests).toHaveLength(1);
+  expect(fixture.connections).toHaveLength(1);
 });

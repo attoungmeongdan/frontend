@@ -105,10 +105,10 @@ export const router = createBrowserRouter([
             } satisfies LayoutHandle,
           },
           {
-            path: "/measurements/:id/analysis",
+            path: "/measurements/:measurementGroupId/analysis",
             element: <MeasurementAnalysisPage />,
             handle: {
-              header: { title: "측정 분석", showClose: true },
+              header: { title: "측정 분석", showBack: true, showClose: true },
             } satisfies LayoutHandle,
           },
           {

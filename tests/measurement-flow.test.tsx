@@ -118,7 +118,7 @@ function mount(state?: object) {
     [
       { path: "/", element: <div>Home</div> },
       { path: "/measure", element: <MeasurePage /> },
-      { path: "/measurements/:id/analysis", element: <div>Analysis</div> },
+      { path: "/measurements/:measurementGroupId/analysis", element: <div>Analysis</div> },
     ],
     { initialEntries: ["/", { pathname: "/measure", state }], initialIndex: 1 },
   );
@@ -164,6 +164,8 @@ function complete() {
   });
 }
 beforeEach(() => {
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   vi.useFakeTimers();
   vi.stubGlobal("WebSocket", Socket);
   saved = 0;
@@ -207,7 +209,7 @@ describe("measurement page with shared session + start-pose hooks", () => {
     expect(screen.getByRole("dialog").textContent).toContain("같이 운동");
     expect(api.createWorkoutSession).not.toHaveBeenCalled();
     const expectedApi = ["CHAIR_STAND", "PUSH_UP", "SIT_UP", "PLANK"];
-    const expectedNames = ["의자앉았다일어나기", "팔굽혀펴기", "윗몸일으키기", "플랭크"];
+    const expectedNames = ["의자 앉았다 일어나기", "팔굽혀펴기", "윗몸일으키기", "플랭크"];
     expect(MEASUREMENT_ORDER).toEqual(expectedApi);
     expect(MEASURE_STEPS.map((step) => step.name)).toEqual(expectedNames);
     expect(MEASUREMENT_RESULT_EXERCISES.map((step) => step.name)).toEqual(expectedNames);
@@ -431,7 +433,7 @@ it("expired measurement recovers via a fresh start pose, without skipping guide 
       .at(-1)!
       .message({ type: "ERROR", code: "EXERCISE_PROCESSING_FAILED", message: "expired" }),
   );
-  await tick();
+  await tick(3500);
   expect(screen.getByRole("alert").textContent).toContain("시작 자세");
   fireEvent.click(screen.getByRole("button", { name: "세션 다시 시작" }));
   act(() => {
@@ -515,7 +517,7 @@ it("polling a completed result still waits for matching persisted progress", asy
     ...(await result(id)),
     status: "COMPLETED",
   }));
-  await tick(3500);
+  await tick(6500);
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.getByRole("alert").textContent).toContain("저장 확인");
   expect(api.resumeMeasurementSession).not.toHaveBeenCalled();
@@ -682,4 +684,42 @@ it("keeps the error when the server rejects the order but reports no saved progr
   await detectPose(0);
   expect(lastSession.exerciseType).toBe("CHAIR_STAND");
   expect(Socket.sockets).toHaveLength(1);
+});
+
+it("recovers SIT_UP processing errors and delayed progress, then finishes PLANK under StrictMode", async () => {
+  saved = 2;
+  group = "group-1";
+  mount();
+  await tick();
+  await start(2);
+  const socket = Socket.sockets.at(-1)!;
+  act(() => {
+    socket.message({ ...completeEvent(), type: "ANALYSIS_RESULT", remainingTimeMs: 40000 });
+    socket.message({ type: "ERROR", code: "EXERCISE_PROCESSING_FAILED", message: "frame failed" });
+    camera.frame(pose(2), { width: 1280, height: 720 });
+  });
+  expect(screen.queryByRole("button", { name: "완료 상태 다시 확인" })).toBeNull();
+  expect(socket.send).toHaveBeenCalled();
+  const read = vi.mocked(api.getWorkoutSessionResult).getMockImplementation()!;
+  vi.mocked(api.getWorkoutSessionResult).mockImplementation(async (id) => ({
+    ...(await read(id)),
+    status: "COMPLETED",
+  }));
+  act(() => socket.message(completeEvent()));
+  await tick();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  saved = 3;
+  await tick(1000);
+  expect(screen.getByRole("dialog").textContent).toContain("플랭크");
+  await start(3);
+  complete();
+  await tick();
+  expect(screen.getByRole("dialog").textContent).toContain("모든 측정을 마쳤어요");
+  expect(api.resumeMeasurementSession).toHaveBeenCalledOnce();
+  expect(api.createWorkoutSession).toHaveBeenCalledExactlyOnceWith(
+    "PLANK",
+    "group-1",
+    "MEASUREMENT",
+  );
+  expect(api.completeWorkoutSession).not.toHaveBeenCalled();
 });

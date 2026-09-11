@@ -41,9 +41,9 @@ function selectMockView(mockState: AnalysisMockState): AnalysisView {
   return ANALYSIS_MOCK;
 }
 
-// 06_Analysis — /measurements/:id/analysis
+// 06_Analysis — /measurements/:measurementGroupId/analysis
 function MeasurementAnalysisPage() {
-  const { id } = useParams<{ id: string }>();
+  const { measurementGroupId } = useParams<{ measurementGroupId: string }>();
   const [searchParams] = useSearchParams();
   const stateParam = searchParams.get("state");
   const mockState = readAnalysisMockState(stateParam);
@@ -54,8 +54,8 @@ function MeasurementAnalysisPage() {
   // 측정 ID 나 목 상태가 바뀌면 재시도 진행 상태를 초기화한다
   return (
     <MeasurementAnalysis
-      key={`${id}:${mockState}:${isMocked}`}
-      measurementGroupId={id}
+      key={`${measurementGroupId}:${mockState}:${isMocked}`}
+      measurementGroupId={measurementGroupId}
       mockState={mockState}
       isMocked={isMocked}
     />
