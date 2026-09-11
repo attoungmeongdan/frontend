@@ -3,7 +3,7 @@ import type { ExerciseType } from "@/constants/exercises";
 import type { PoseLandmarkPayload } from "@/types/exercise";
 import { matchesExerciseStartPose } from "@/utils/startPose";
 
-const REQUIRED_CONSECUTIVE_FRAMES = 8;
+const REQUIRED_CONSECUTIVE_FRAMES = 3;
 
 interface UseStartPoseDetectionOptions {
   exerciseType: ExerciseType;
