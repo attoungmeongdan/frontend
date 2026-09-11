@@ -1,5 +1,5 @@
 import Button from "@/components/ui/Button";
-import turtleGuide from "@/assets/mascots/turtle-guide.png";
+import turtleGuide from "@/assets/mascots/turtle-guide.webp";
 
 interface MeasureBubbleProps {
   message: string;
