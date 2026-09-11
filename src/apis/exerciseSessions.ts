@@ -5,6 +5,7 @@ import type {
   ExerciseApiType,
   ExerciseSessionCreateResponse,
   ExerciseSessionResult,
+  MeasurementProgress,
 } from "@/types/exercise";
 import type { CommonResponse } from "@/types/api";
 
@@ -15,12 +16,37 @@ export const EXERCISE_API_TYPE: Record<ExerciseType, ExerciseApiType> = {
   plank: "PLANK",
 };
 
-export async function createWorkoutSession(exerciseType: ExerciseApiType) {
+export async function createWorkoutSession(
+  exerciseType: ExerciseApiType,
+  measurementGroupId?: string,
+  mode: "WORKOUT" | "MEASUREMENT" = "WORKOUT",
+) {
   const response = await axiosInstance.post<CommonResponse<ExerciseSessionCreateResponse>>(
     "/api/v1/exercise-sessions",
-    { mode: "WORKOUT", exerciseType },
+    { mode, exerciseType, ...(measurementGroupId ? { measurementGroupId } : {}) },
   );
 
+  return response.data.data;
+}
+
+export async function getMeasurementProgress() {
+  const response = await axiosInstance.get<CommonResponse<MeasurementProgress>>(
+    "/api/v1/exercise-sessions/measurement/progress",
+  );
+  return response.data.data;
+}
+
+export async function resumeMeasurementSession() {
+  const response = await axiosInstance.post<CommonResponse<ExerciseSessionCreateResponse>>(
+    "/api/v1/exercise-sessions/measurement/resume",
+  );
+  return response.data.data;
+}
+
+export async function restartMeasurementSession() {
+  const response = await axiosInstance.post<CommonResponse<ExerciseSessionCreateResponse>>(
+    "/api/v1/exercise-sessions/measurement/restart",
+  );
   return response.data.data;
 }
 

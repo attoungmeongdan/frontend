@@ -32,7 +32,10 @@ interface WorkoutDiagnostics {
 
 interface UseWorkoutSessionOptions {
   exerciseType: ExerciseType;
-  onCompleted: (sessionId: number) => void;
+  onCompleted: (sessionId: number, measurementGroupId?: string | null) => void;
+  mode?: "WORKOUT" | "MEASUREMENT";
+  measurementGroupId?: string | null;
+  createSession?: () => Promise<ExerciseSessionCreateResponse>;
 }
 
 function isSocketMessage(value: unknown): value is ExerciseAnalysisResult | ExerciseSocketError {
@@ -63,7 +66,13 @@ function errorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessionOptions) {
+export function useWorkoutSession({
+  exerciseType,
+  onCompleted,
+  mode = "WORKOUT",
+  measurementGroupId,
+  createSession,
+}: UseWorkoutSessionOptions) {
   const queryClient = useQueryClient();
   const socketRef = useRef<WebSocket | null>(null);
   const sessionRef = useRef<ExerciseSessionCreateResponse | null>(null);
@@ -116,7 +125,7 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
       completedRef.current = true;
       closeSocket();
       void queryClient.invalidateQueries({ queryKey: ["recent-seven-days"] });
-      onCompletedRef.current(sessionId);
+      onCompletedRef.current(sessionId, sessionRef.current?.measurementGroupId);
     },
     [closeSocket, queryClient],
   );
@@ -156,6 +165,10 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
 
       if (message.type === "SESSION_COMPLETED") {
         updateConnectionState("completing");
+        if (mode === "MEASUREMENT") {
+          moveToCompleted(sessionId);
+          return;
+        }
         void verifyCompletedResult(sessionId).catch((error: unknown) => {
           setConnectionError(errorMessage(error, "완료된 운동 기록을 확인하지 못했어요."));
           setRetryAction("verify");
@@ -163,7 +176,7 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
         });
       }
     },
-    [updateConnectionState, verifyCompletedResult],
+    [mode, moveToCompleted, updateConnectionState, verifyCompletedResult],
   );
 
   const connectSocket = useCallback(
@@ -248,7 +261,13 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
     updateConnectionState("connecting");
 
     try {
-      const session = await createWorkoutSession(EXERCISE_API_TYPE[exerciseType]);
+      const session = createSession
+        ? await createSession()
+        : await createWorkoutSession(
+            EXERCISE_API_TYPE[exerciseType],
+            measurementGroupId ?? undefined,
+            mode,
+          );
       if (attempt !== attemptRef.current) return;
       sessionRef.current = session;
       setDiagnostics((current) => ({
@@ -265,7 +284,15 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
       setRetryAction("start");
       updateConnectionState("error");
     }
-  }, [closeSocket, connectSocket, exerciseType, updateConnectionState]);
+  }, [
+    closeSocket,
+    connectSocket,
+    createSession,
+    exerciseType,
+    measurementGroupId,
+    mode,
+    updateConnectionState,
+  ]);
 
   const sendPoseFrame = useCallback((landmarks: PoseLandmarkPayload[]) => {
     const socket = socketRef.current;
@@ -307,6 +334,7 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
   }, []);
 
   const complete = useCallback(async () => {
+    if (mode === "MEASUREMENT") return;
     const sessionId = sessionRef.current?.sessionId;
     if (!sessionId || connectionStateRef.current === "completing" || completedRef.current) return;
 
@@ -327,7 +355,7 @@ export function useWorkoutSession({ exerciseType, onCompleted }: UseWorkoutSessi
         updateConnectionState("error");
       }
     }
-  }, [moveToCompleted, updateConnectionState, verifyCompletedResult]);
+  }, [mode, moveToCompleted, updateConnectionState, verifyCompletedResult]);
 
   const retry = useCallback(() => {
     const sessionId = sessionRef.current?.sessionId;
