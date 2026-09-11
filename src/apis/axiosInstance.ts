@@ -5,9 +5,9 @@ import {
   getSessionId,
   updateTokenForSession,
 } from "@/apis/tokenStore";
-import { API_BASE_URL } from "@/config/env";
 import type { CommonResponse } from "@/types/api";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const REFRESH_PATH = "/api/v1/auth/refresh";
 // 응답이 끝내 오지 않으면 화면이 스플래시에 갇힌다. 실패로 떨어뜨려 오류 화면으로 넘긴다
 const TIMEOUT_MS = 10_000;
