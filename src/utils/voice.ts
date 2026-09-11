@@ -3,7 +3,10 @@ import { allVoiceSources } from "@/constants/voice";
 // 음성 재생 엔진.
 // element 를 하나만 두고 src 를 갈아끼운다. 숫자 하나가 끝나기 전에 다음 숫자가 오면
 // 새 src 가 이전 재생을 그대로 끊어 주므로, 동작보다 뒤처진 숫자가 쌓이지 않는다.
-const UNLOCK_SOURCE = "/voice/count-1.m4a";
+// 실제 발화 파일을 쓰면 로그인처럼 첫 탭 직후 페이지가 이동할 때 pause 전에
+// 소리가 새어 나올 수 있다. 네트워크 요청도 만들지 않는 짧은 무음 WAV 로 연다.
+const UNLOCK_SOURCE =
+  "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA";
 
 let element: HTMLAudioElement | null = null;
 let playToken = 0;
