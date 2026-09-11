@@ -55,7 +55,7 @@ function toDayOfMonth(date: string) {
 
 /**
  * 팀원 한 명의 월간 기록을 캘린더가 읽는 형태로 바꾼다.
- * 그룹 캘린더는 체력 측정 표시를 쓰지 않으므로 measurementId 는 항상 null 이다.
+ * 그룹 캘린더는 체력 측정 표시를 쓰지 않으므로 measurementGroupId 는 항상 null 이다.
  */
 export function toMemberActivity(
   member: GroupMonthlyMemberSummary,
@@ -74,7 +74,7 @@ export function toMemberActivity(
     exercisedDays: member.days.map((record) => ({
       day: toDayOfMonth(record.date),
       count: record.exerciseTypeCount,
-      measurementId: null,
+      measurementGroupId: null,
     })),
   };
 }
