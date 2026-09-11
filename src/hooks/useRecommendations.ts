@@ -19,7 +19,8 @@ interface MeasurementHistoryEntry {
 
 interface MeasurementHistoryByExercise {
   today: MeasurementHistoryEntry | null;
-  previousMeasurements: MeasurementHistoryEntry[];
+  /** 비었을 때 빈 배열인지 null 인지 명세에 없어 둘 다 받는다 */
+  previousMeasurements: MeasurementHistoryEntry[] | null;
 }
 
 type MeasurementHistoryResponse = Record<
@@ -34,14 +35,27 @@ type MeasurementHistoryResponse = Record<
  */
 function pickLatestMeasurementGroupId(history: MeasurementHistoryResponse): string | null {
   let latest: MeasurementHistoryEntry | null = null;
+  let latestAt = Number.NEGATIVE_INFINITY;
 
   for (const exercise of Object.values(history)) {
     if (!exercise) continue;
 
-    const entries = [...(exercise.today ? [exercise.today] : []), ...exercise.previousMeasurements];
+    const entries = [
+      ...(exercise.today ? [exercise.today] : []),
+      ...(exercise.previousMeasurements ?? []),
+    ];
 
     for (const entry of entries) {
-      if (latest === null || entry.measuredAt > latest.measuredAt) latest = entry;
+      // 문자열 비교는 타임존 표기가 섞이면 순서가 어긋나므로 시각으로 바꿔 비교한다
+      const measuredAt = Date.parse(entry.measuredAt);
+
+      // 못 읽는 날짜를 후보에 두면 NaN 비교가 항상 false 라 잘못된 그룹이 최신으로 남는다
+      if (Number.isNaN(measuredAt)) continue;
+
+      if (measuredAt > latestAt) {
+        latest = entry;
+        latestAt = measuredAt;
+      }
     }
   }
 
