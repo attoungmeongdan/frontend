@@ -45,12 +45,7 @@ export const MAP_MESSAGES = {
 export const SHEET_FIELD_LABELS = {
   location: "위치",
   category: "유형",
-  info: "제공 정보",
 } as const;
-
-/** 공공데이터 미제공 항목(전화·운영시간 등)은 표기하지 않는다는 안내 */
-export const SHEET_INFO_VALUE =
-  "공공데이터 제공 항목만 표시 — 미제공 전화·운영시간은 표기하지 않음";
 
 export const SHEET_CLOSE_LABEL = "닫기";
 

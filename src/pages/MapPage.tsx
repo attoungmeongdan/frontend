@@ -1,5 +1,6 @@
 import { LoaderCircle, MapPin, TriangleAlert } from "lucide-react";
 import { useCallback, useState } from "react";
+import { AnimatePresence } from "motion/react";
 import FacilityBottomSheet from "@/components/map/FacilityBottomSheet";
 import MapCenterMessage from "@/components/map/MapCenterMessage";
 import MapMarkers from "@/components/map/MapMarkers";
@@ -66,7 +67,17 @@ function MapPage() {
         />
       )}
 
-      {selectedFacility && <FacilityBottomSheet facility={selectedFacility} onClose={closeSheet} />}
+      {/* 시트가 내려가는 모션까지 보이도록 AnimatePresence 로 감싼다.
+          시설을 바꿀 때는 key 가 같아 시트가 유지되고 내용만 슬라이드된다 */}
+      <AnimatePresence>
+        {selectedFacility && (
+          <FacilityBottomSheet
+            key="facility-sheet"
+            facility={selectedFacility}
+            onClose={closeSheet}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
