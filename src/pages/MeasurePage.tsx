@@ -14,9 +14,14 @@ import { MEASURE_STEPS } from "@/constants/measure";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
 import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import type { ApiExerciseType, ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise";
+import type {
+  ApiExerciseType,
+  ExerciseCameraState,
+  PoseFrameSize,
+  PoseLandmarkPayload,
+} from "@/types/exercise";
 
-const INTRO_BODY = "의자 앉았다 일어나기, 윗몸일으키기,\n팔굽혀펴기, 플랭크\n총 4단계로 진행돼요!";
+const INTRO_BODY = "의자 앉았다 일어나기, 팔굽혀펴기,\n윗몸일으키기, 플랭크\n총 4단계로 진행돼요!";
 const formatTime = (ms: number) => {
   const seconds = Math.max(0, Math.ceil(ms / 1000));
   return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
@@ -64,8 +69,8 @@ function MeasurePage() {
   });
   const observeStartPose = startPose.observe;
   const handlePoseFrame = useCallback(
-    (landmarks: PoseLandmarkPayload[]) => {
-      observeStartPose(landmarks);
+    (landmarks: PoseLandmarkPayload[], frameSize: PoseFrameSize) => {
+      observeStartPose(landmarks, frameSize);
       sendPoseFrame(landmarks);
     },
     [observeStartPose, sendPoseFrame],
@@ -97,7 +102,7 @@ function MeasurePage() {
           (item) => item.exercise === toExercise(value.nextExerciseType),
         );
         setStepIndex(index >= 0 ? index : 0);
-        setResume(value.completedExercises.length > 0);
+        setResume(!!value.measurementGroupId);
         setPhase(value.completedExercises.length ? "ready" : "intro");
       })
       .catch(() => setPhase("intro"));
@@ -193,7 +198,7 @@ function MeasurePage() {
         cancelDisabled={session.connectionState === "completing"}
         onCancel={moveHome}
       >
-        {import.meta.env.DEV && (
+        {import.meta.env.DEV && new URLSearchParams(window.location.search).has("debugCamera") && (
           <output className="bg-camera-scrim text-caption absolute right-2 bottom-2 z-20 rounded-sm px-2 py-1 text-white/80">
             start:{startPose.isMatching ? "match" : "wait"} · ws:{session.connectionState} · phase:
             {session.analysis?.phase ?? "-"} · send:{session.diagnostics.sentFrames}/

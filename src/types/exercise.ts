@@ -12,6 +12,12 @@ export type ExerciseCameraState =
 
 export type ExerciseApiType = "CHAIR_STAND" | "SIT_UP" | "PUSH_UP" | "PLANK";
 
+/** Intrinsic camera frame dimensions, independent of viewport orientation. */
+export interface PoseFrameSize {
+  width: number;
+  height: number;
+}
+
 export interface PoseLandmarkPayload {
   index: number;
   x: number;
