@@ -12,6 +12,7 @@ declare namespace kakao.maps {
   class Map {
     constructor(container: HTMLElement, options: { center: LatLng; level: number });
     setCenter(latlng: LatLng): void;
+    panTo(latlng: LatLng): void;
     setBounds(bounds: LatLngBounds): void;
     relayout(): void;
   }
@@ -59,6 +60,7 @@ declare namespace kakao.maps {
     constructor(options: { position: LatLng; image?: MarkerImage; title?: string });
     setImage(image: MarkerImage): void;
     setMap(map: Map | null): void;
+    getPosition(): LatLng;
   }
 
   /** 마커가 많을 때 가까운 것끼리 묶어 준다. libraries=clusterer 로 로드해야 쓸 수 있다 */

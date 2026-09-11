@@ -122,4 +122,14 @@
     color: var(--color-text-primary);
     font-family: var(--font-sans);
   }
+
+  /* 스크롤은 그대로 두고 막대만 숨긴다. 모바일 앱 프레임 안에서 데스크톱 스크롤바가 보이지 않게 */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
 }

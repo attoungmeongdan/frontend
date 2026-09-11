@@ -137,7 +137,7 @@ function DayMark({ cell, onOpenAnalysis }: DayMarkProps) {
   const label = `${date}일${exerciseLabel}${measuredLabel}${todayLabel}`;
 
   const numberTone = isToday
-    ? "text-action-orange font-bold"
+    ? "font-bold"
     : isFuture
       ? "text-text-secondary/40"
       : "text-text-primary";
