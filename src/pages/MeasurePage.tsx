@@ -5,14 +5,16 @@ import turtleGuide from "@/assets/mascots/turtle-guide.png";
 import CameraStage, { type CameraWarning } from "@/components/exercise/CameraStage";
 import CameraStatusScreen from "@/components/exercise/CameraStatusScreen";
 import PoseCameraFeed from "@/components/exercise/PoseCameraFeed";
+import StartPoseGuide from "@/components/exercise/StartPoseGuide";
 import Button from "@/components/ui/Button";
 import MascotModal from "@/components/ui/MascotModal";
 import { getMeasurementProgress, resumeMeasurementSession } from "@/apis/exerciseSessions";
 import { EXERCISES, type ExerciseType } from "@/constants/exercises";
 import { MEASURE_STEPS } from "@/constants/measure";
 import { usePoseCamera } from "@/hooks/usePoseCamera";
+import { useStartPoseDetection } from "@/hooks/useStartPoseDetection";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
-import type { ApiExerciseType, ExerciseCameraState } from "@/types/exercise";
+import type { ApiExerciseType, ExerciseCameraState, PoseLandmarkPayload } from "@/types/exercise";
 
 const INTRO_BODY = "의자 앉았다 일어나기, 윗몸일으키기,\n팔굽혀펴기, 플랭크\n총 4단계로 진행돼요!";
 const formatTime = (ms: number) => {
@@ -49,9 +51,35 @@ function MeasurePage() {
     createSession: resume ? resumeMeasurementSession : undefined,
     onCompleted: handleCompleted,
   });
-  const camera = usePoseCamera({ onPoseFrame: session.sendPoseFrame });
+  const startSession = session.start;
+  const sendPoseFrame = session.sendPoseFrame;
+  const handleStartPoseDetected = useCallback(() => {
+    setPhase("measuring");
+    void startSession();
+  }, [startSession]);
+  const startPose = useStartPoseDetection({
+    exerciseType: step?.exercise ?? "chair-stand",
+    enabled: phase === "ready" && session.connectionState === "idle",
+    onDetected: handleStartPoseDetected,
+  });
+  const observeStartPose = startPose.observe;
+  const handlePoseFrame = useCallback(
+    (landmarks: PoseLandmarkPayload[]) => {
+      observeStartPose(landmarks);
+      sendPoseFrame(landmarks);
+    },
+    [observeStartPose, sendPoseFrame],
+  );
+  const camera = usePoseCamera({ onPoseFrame: handlePoseFrame });
+  const startCamera = camera.start;
+  const stopCamera = camera.stop;
   const cameraReady =
     camera.state === "normal" || camera.state === "no-body" || camera.state === "bad-pose";
+
+  useEffect(() => {
+    void startCamera();
+    return stopCamera;
+  }, [startCamera, stopCamera]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,11 +109,6 @@ function MeasurePage() {
     camera.stop();
     navigate("/");
   };
-  const startStep = () => {
-    setPhase("measuring");
-    void camera.start();
-    void session.start();
-  };
   if (phase === "loading" || !step)
     return (
       <div className="flex h-full items-center justify-center">
@@ -95,11 +118,19 @@ function MeasurePage() {
 
   const feedback = session.analysis?.feedback.find((item) => item.severity !== "INFO");
   const warning: CameraWarning | undefined =
-    camera.state === "no-body" ? "no-body" : feedback ? "bad-pose" : undefined;
+    phase !== "measuring" || session.connectionState !== "active"
+      ? undefined
+      : camera.state === "no-body"
+        ? "no-body"
+        : feedback
+          ? "bad-pose"
+          : undefined;
   const value = cameraReady
-    ? step.valueKind === "timer"
-      ? formatTime(session.analysis?.validDurationMs ?? 0)
-      : String(session.analysis?.validCount ?? 0)
+    ? phase !== "measuring" || session.connectionState === "idle"
+      ? "—"
+      : step.valueKind === "timer"
+        ? formatTime(session.analysis?.validDurationMs ?? 0)
+        : String(session.analysis?.validCount ?? 0)
     : "—";
   let overlay = null;
   if (!cameraReady)
@@ -112,6 +143,8 @@ function MeasurePage() {
         />
       </div>
     );
+  else if (phase === "ready" && session.connectionState === "idle")
+    overlay = <StartPoseGuide exerciseType={step.exercise} isMatching={startPose.isMatching} />;
   else if (session.connectionState === "connecting" || session.connectionState === "completing")
     overlay = (
       <div className="bg-camera-overlay absolute inset-0 z-30 flex items-center justify-center">
@@ -160,16 +193,6 @@ function MeasurePage() {
           title="같이 운동 수행 능력을 측정해볼까요?"
           body={INTRO_BODY}
           primaryAction={{ label: "알겠어요", onClick: () => setPhase("ready") }}
-          cameraLayout
-        />
-      )}
-      {phase === "ready" && (
-        <MascotModal
-          key={step.exercise}
-          mascot={step.mascot}
-          title={`${stepIndex + 1}단계 · ${step.name}`}
-          body={step.readyBody}
-          primaryAction={{ label: "준비됐어요", onClick: startStep }}
           cameraLayout
         />
       )}

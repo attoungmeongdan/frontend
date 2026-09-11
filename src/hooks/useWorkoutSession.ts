@@ -405,8 +405,21 @@ export function useWorkoutSession({
       void complete();
       return;
     }
-    void start();
-  }, [complete, connectSocket, retryAction, start, updateConnectionState, verifyCompletedResult]);
+    attemptRef.current += 1;
+    closeSocket();
+    sessionRef.current = null;
+    completedRef.current = false;
+    setAnalysis(null);
+    setConnectionError(null);
+    updateConnectionState("idle");
+  }, [
+    closeSocket,
+    complete,
+    connectSocket,
+    retryAction,
+    updateConnectionState,
+    verifyCompletedResult,
+  ]);
 
   const cancel = useCallback(() => {
     attemptRef.current += 1;
@@ -429,7 +442,7 @@ export function useWorkoutSession({
     connectionError,
     retryLabel:
       retryAction === "start"
-        ? "새 세션으로 다시 시작"
+        ? "시작 자세 다시 잡기"
         : retryAction === "socket"
           ? "WebSocket 다시 연결"
           : "저장 다시 시도",
