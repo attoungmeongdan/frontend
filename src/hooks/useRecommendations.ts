@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { getMeasurementHistory, getMeasurementInsights } from "@/apis/exercise";
+import { shouldRetry } from "@/config/queryClient";
 import type { AiInsight } from "@/types/exercise";
 import type { RecommendationStatus } from "@/types/mypage";
 
@@ -62,9 +63,31 @@ function pickLatestMeasurementGroupId(history: MeasurementHistoryResponse): stri
   return latest?.measurementGroupId ?? null;
 }
 
+/**
+ * 추천은 측정 완료 후 서버가 AI 로 비동기 생성한다.
+ * 생성이 끝나기 전에 조회하면 404 라서, 잠시 기다렸다 다시 묻는다.
+ * 이 시간이 지나도 404 면 "아직 없어요" 로 둔다
+ */
+const GENERATION_POLL_INTERVAL = 3 * 1000;
+const GENERATION_POLL_MAX_COUNT = 10;
+
 /** 저장된 추천이 없을 때 서버는 404 를 준다. 실패가 아니라 "아직 없음" 이다 */
 function isNotGenerated(error: unknown) {
   return isAxiosError(error) && error.response?.status === 404;
+}
+
+/** 404 는 생성 중으로 보고 폴링한다. 그 외는 공용 규칙(5xx·무응답만 3회)을 따른다 */
+function shouldRetryInsight(failureCount: number, error: Error) {
+  if (isNotGenerated(error)) return failureCount < GENERATION_POLL_MAX_COUNT;
+
+  return shouldRetry(failureCount, error);
+}
+
+function insightRetryDelay(failureCount: number, error: Error) {
+  // react-query 기본 백오프(1s·2s·4s…)는 5xx 재시도에만 쓴다
+  return isNotGenerated(error)
+    ? GENERATION_POLL_INTERVAL
+    : Math.min(1000 * 2 ** failureCount, 30 * 1000);
 }
 
 interface RecommendationsResult {
@@ -76,7 +99,8 @@ interface RecommendationsResult {
 /**
  * 마이페이지 추천 운동 3개.
  * 최신 측정 그룹을 찾은 뒤 그 그룹에 저장된 AI 추천을 읽는다.
- * 측정 이력이 없거나 추천이 아직 생성되지 않았으면 빈 목록으로 두어 "아직 없어요" 화면을 띄운다.
+ * 추천이 아직 생성 중(404)이면 잠시 폴링하고, 측정 이력이 없거나 끝내 생성되지 않았으면
+ * 빈 목록으로 두어 "아직 없어요" 화면을 띄운다.
  */
 export function useRecommendations(): RecommendationsResult {
   const historyQuery = useQuery({
@@ -93,6 +117,9 @@ export function useRecommendations(): RecommendationsResult {
     queryKey: ["measurement-insights", groupId] as const,
     queryFn: () => getMeasurementInsights(groupId as string),
     enabled: groupId !== null,
+    // 재시도 중엔 isPending 이 유지돼 로딩 화면이 그대로 보인다
+    retry: shouldRetryInsight,
+    retryDelay: insightRetryDelay,
   });
 
   const retry = () => {
