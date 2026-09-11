@@ -19,7 +19,7 @@ function SocialLoginButtons({ onSelect, disabled = false }: SocialLoginButtonsPr
         className="bg-kakao-yellow rounded-input text-button text-kakao-label relative flex h-13 items-center justify-center"
       >
         <img src={kakaoMark} alt="" draggable={false} className="absolute left-4 h-5 w-[21px]" />
-        카카오로 시작하기
+        Kakao로 시작하기
       </button>
 
       <button
