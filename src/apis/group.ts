@@ -123,3 +123,89 @@ export async function deleteGroup(groupId: number) {
 export async function leaveGroup(groupId: number) {
   await axiosInstance.delete<CommonResponse<null>>(`/api/v1/groups/${groupId}/members/me`);
 }
+
+/** 서버가 쓰는 운동 코드. 플랭크만 단위가 ms 다 */
+export type WorkoutExerciseType = "CHAIR_STAND" | "SIT_UP" | "PUSH_UP" | "PLANK";
+
+export interface GroupExerciseMemberValue {
+  userId: number;
+  nickname: string;
+  /** COUNT 면 횟수, MS 면 유지 시간(ms). 0 이면 미실행 */
+  value: number;
+  owner?: boolean;
+  isOwner?: boolean;
+}
+
+export interface GroupExerciseBarSection {
+  type: WorkoutExerciseType;
+  unit: "COUNT" | "MS";
+  /** 막대 100% 기준값. 전원 0 이면 0 */
+  topValue: number;
+  /** 그룹 전원. 수행량 내림차순으로 서버가 정렬해 준다 */
+  members: GroupExerciseMemberValue[];
+}
+
+export interface GroupDailyWorkoutResponse {
+  groupId: number;
+  groupName: string;
+  /** yyyy-MM-dd */
+  date: string;
+  /** 고정 4개 섹션 */
+  exercises: GroupExerciseBarSection[];
+}
+
+/** 멤버의 하루치 기록. 실제 수행한 날만 온다 */
+export interface GroupMemberDailyRecord {
+  /** yyyy-MM-dd */
+  date: string;
+  /** 그날 수행한 운동 종류 수 (1~4). 캘린더 원 채우기 단계 */
+  exerciseTypeCount: number;
+  chairStandCount: number;
+  pushUpCount: number;
+  sitUpCount: number;
+  plankDurationMs: number;
+}
+
+export interface GroupMonthlyMemberSummary {
+  /** 1부터. 서버가 실행률 순으로 매겨 준다 */
+  rank: number;
+  userId: number;
+  nickname: string;
+  /** 0.0 ~ 100.0 */
+  executionRate: number;
+  executedDays: number;
+  /** 그 달 실행 운동 종류 총합 (하루 최대 4) */
+  totalExerciseTypes: number;
+  /** 수행한 날만. 날짜 오름차순 */
+  days: GroupMemberDailyRecord[];
+  owner?: boolean;
+  isOwner?: boolean;
+}
+
+export interface GroupMonthlyWorkoutResponse {
+  groupId: number;
+  groupName: string;
+  daysInMonth: number;
+  /** 그룹 전원. 이미 랭킹 순으로 정렬돼 있다 */
+  members: GroupMonthlyMemberSummary[];
+}
+
+/** 하루치 운동량. date 를 비우면 서버가 오늘(Asia/Seoul)로 본다 */
+export async function getGroupDailyWorkout(groupId: number, date?: string) {
+  const { data } = await axiosInstance.get<CommonResponse<GroupDailyWorkoutResponse>>(
+    `/api/v1/groups/${groupId}/workout-records/daily`,
+    date ? { params: { date } } : undefined,
+  );
+
+  return data.data;
+}
+
+/** 한 달 실행률 랭킹 + 멤버별 일별 기록. yearMonth 를 비우면 서버가 이번 달로 본다 */
+export async function getGroupMonthlyWorkout(groupId: number, yearMonth?: string) {
+  const { data } = await axiosInstance.get<CommonResponse<GroupMonthlyWorkoutResponse>>(
+    `/api/v1/groups/${groupId}/workout-records/monthly`,
+    yearMonth ? { params: { yearMonth } } : undefined,
+  );
+
+  return data.data;
+}

@@ -47,8 +47,6 @@ export const TODAY_REPORT_EXERCISES: {
   { exercise: "push-up", icon: Dumbbell, unitLabel: "횟수", suffix: "개" },
 ];
 
-export const NO_RECORD_LABEL = "아직";
-
 export const INVITE_LINK_HOST = "fittle.app/g";
 
 export const GROUP_SHEET = {
