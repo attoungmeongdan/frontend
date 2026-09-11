@@ -4,11 +4,14 @@ export class CompletionPendingError extends Error {}
 export class SessionResultMismatchError extends Error {}
 
 /** Retry reads only. A socket event can arrive before result/progress is visible. */
-export async function readCompletion<T>(read: () => Promise<T>, signal: AbortSignal): Promise<T> {
+export async function readCompletion<T>(
+  read: (signal: AbortSignal) => Promise<T>,
+  signal: AbortSignal,
+): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     signal.throwIfAborted();
     try {
-      const result = await read();
+      const result = await read(signal);
       signal.throwIfAborted();
       return result;
     } catch (error) {

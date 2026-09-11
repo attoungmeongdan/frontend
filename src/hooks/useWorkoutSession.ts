@@ -186,8 +186,8 @@ export function useWorkoutSession({
       try {
         await withMinimumDuration(
           () =>
-            readCompletion(async () => {
-              const result = storedResult ?? (await getWorkoutSessionResult(sessionId));
+            readCompletion(async (signal) => {
+              const result = storedResult ?? (await getWorkoutSessionResult(sessionId, signal));
               storedResult = undefined;
               if (attempt !== attemptRef.current || sessionRef.current?.sessionId !== sessionId)
                 return;
@@ -250,6 +250,7 @@ export function useWorkoutSession({
     const sessionId = sessionRef.current?.sessionId;
     if (!sessionId) return;
     const attempt = attemptRef.current;
+    const controller = new AbortController();
     let cancelled = false;
     let failures = 0;
     let pendingAfterTimeout = 0;
@@ -261,7 +262,7 @@ export function useWorkoutSession({
       connectionStateRef.current === "active";
     const poll = async () => {
       try {
-        const result = await getWorkoutSessionResult(sessionId);
+        const result = await getWorkoutSessionResult(sessionId, controller.signal);
         if (!isCurrent()) return;
         validateStoredResult(result, sessionId);
         if (["COMPLETED", "EXPIRED", "CANCELLED"].includes(result.status)) {
@@ -301,6 +302,7 @@ export function useWorkoutSession({
     timer = setTimeout(() => void poll(), 3_000);
     return () => {
       cancelled = true;
+      controller.abort();
       clearTimeout(timer);
     };
   }, [connectionState, mode, updateConnectionState, validateStoredResult, verifyCompletedResult]);

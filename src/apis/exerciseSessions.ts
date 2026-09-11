@@ -61,9 +61,10 @@ export async function completeWorkoutSession(sessionId: number) {
   return response.data.data;
 }
 
-export async function getWorkoutSessionResult(sessionId: number) {
+export async function getWorkoutSessionResult(sessionId: number, signal?: AbortSignal) {
   const response = await axiosInstance.get<CommonResponse<ExerciseSessionResult>>(
     `/api/v1/exercise-sessions/${sessionId}/result`,
+    { signal },
   );
 
   return response.data.data;

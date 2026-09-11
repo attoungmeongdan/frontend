@@ -196,10 +196,13 @@ describe("measurement completion and recovery", () => {
 
   it("ignores delayed result responses after leaving the session", async () => {
     let resolve!: (value: ExerciseSessionResult) => void;
-    vi.mocked(api.getWorkoutSessionResult).mockReturnValue(
-      new Promise((done) => {
-        resolve = done;
-      }),
+    let requestSignal: AbortSignal | undefined;
+    vi.mocked(api.getWorkoutSessionResult).mockImplementation(
+      (_sessionId, signal) =>
+        new Promise((done) => {
+          requestSignal = signal;
+          resolve = done;
+        }),
     );
     const hook = setup();
     await start(hook);
@@ -207,6 +210,7 @@ describe("measurement completion and recovery", () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
     act(() => hook.result.current.cancel());
+    expect(requestSignal?.aborted).toBe(true);
     await act(async () => resolve(stored("COMPLETED")));
     expect(hook.onCompleted).not.toHaveBeenCalled();
     expect(hook.result.current.connectionState).toBe("idle");
@@ -345,10 +349,20 @@ it("waits for persisted completion when the socket event beats the result read",
 });
 
 it("cancels scheduled verification reads on unmount", async () => {
+  let requestSignal: AbortSignal | undefined;
+  vi.mocked(api.getWorkoutSessionResult).mockImplementation(
+    (_sessionId, signal) =>
+      new Promise((_resolve, reject) => {
+        requestSignal = signal;
+        signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+      }),
+  );
   const hook = setup();
   const socket = await start(hook);
   await act(async () => socket.message({ type: "SESSION_COMPLETED", sessionId: 1 }));
+  expect(requestSignal?.aborted).toBe(false);
   hook.unmount();
+  expect(requestSignal?.aborted).toBe(true);
   await act(async () => vi.advanceTimersByTimeAsync(10000));
   expect(api.getWorkoutSessionResult).toHaveBeenCalledOnce();
   expect(hook.onCompleted).not.toHaveBeenCalled();
