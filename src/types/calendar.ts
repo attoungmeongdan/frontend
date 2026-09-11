@@ -26,6 +26,11 @@ export interface MonthlyActivity {
   month: number;
   /** 오늘 날짜(일). 이번 달을 보고 있을 때만 값이 있다 */
   today: number | null;
+  /**
+   * 가입 날짜(일). 가입한 달을 보고 있을 때만 값이 있다.
+   * 그 전날까지는 기록이 있을 수 없어 회색으로 가린다. 가입일을 모르면 null
+   */
+  joinedDay: number | null;
   /** 실행률 분모. 이번 달이면 오늘까지 경과일, 지난달이면 그 달 전체 일수 */
   totalTargetDays: number;
   /** 운동한 날 목록 */
@@ -37,6 +42,8 @@ export interface DayCell {
   date: number | null;
   isToday: boolean;
   isFuture: boolean;
+  /** 가입일보다 이른 날. 기록이 없는 게 정상이라 회색으로만 보여 준다 */
+  isBeforeJoin: boolean;
   /** 수행한 종목 수. 0 이면 그날 자유 운동을 하지 않았다 */
   exerciseCount: number;
   /** 자유 운동과 체력 측정을 모두 한 날에만 값이 있다. 분석 화면으로 이동할 때 쓴다 */

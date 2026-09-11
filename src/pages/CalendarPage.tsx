@@ -11,8 +11,9 @@ import {
   MASCOT_MESSAGES,
 } from "@/constants/calendar";
 import { useMonthlyActivity } from "@/hooks/useMonthlyActivity";
+import { useMyProfile } from "@/hooks/useMyPage";
 import { selectMascotMessage } from "@/utils/calendar";
-import { getSeoulToday } from "@/utils/date";
+import { getSeoulToday, parseSeoulDate } from "@/utils/date";
 
 /** 연·월을 한 달 옮긴다. 12월 → 1월 처럼 해가 바뀌는 경우를 함께 처리한다 */
 function shiftMonth(year: number, month: number, delta: number) {
@@ -26,8 +27,14 @@ function CalendarPage() {
   const seoulToday = getSeoulToday();
   const [view, setView] = useState({ year: seoulToday.year, month: seoulToday.month });
 
+  // 가입일 전 기록은 없으므로 가입한 달보다 앞으로는 못 가고, 가입한 달의 가입일 전 날짜는 가린다
+  const { data: profile } = useMyProfile();
+  const joinedAt = parseSeoulDate(profile?.createdAt);
+  const isJoinedMonth =
+    joinedAt !== null && view.year === joinedAt.year && view.month === joinedAt.month;
+
   const isCurrentMonth = view.year === seoulToday.year && view.month === seoulToday.month;
-  const { status, activity, rate, retry } = useMonthlyActivity(view.year, view.month);
+  const { status, activity, rate, retry } = useMonthlyActivity(view.year, view.month, joinedAt);
 
   const goPrevMonth = () => setView((current) => shiftMonth(current.year, current.month, -1));
   const goNextMonth = () => setView((current) => shiftMonth(current.year, current.month, 1));
@@ -84,6 +91,7 @@ function CalendarPage() {
         activity={activity}
         onPrevMonth={goPrevMonth}
         onNextMonth={goNextMonth}
+        canGoPrev={!isJoinedMonth}
         canGoNext={!isCurrentMonth}
       />
       <MonthlyRateCard rate={rate} isCurrentMonth={isCurrentMonth} month={view.month} />
