@@ -87,12 +87,6 @@ export const GROUP_TOAST = {
   deleted: (groupName: string) => `${groupName} 그룹을 삭제했어요.`,
 } as const;
 
-/**
- * 벌칙은 서버가 1~200자로 필수라 칸을 빼도 빈 값을 보낼 수 없다.
- * 입력 화면이 생기기 전까지 이 값으로 채워 보낸다.
- */
-export const DEFAULT_PENALTY = "벌칙 없음";
-
 /** 최대 인원 선택지. 서버가 2~5 만 받는다 */
 export const MEMBER_COUNT_OPTIONS = [2, 3, 4, 5] as const;
 

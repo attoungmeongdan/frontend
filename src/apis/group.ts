@@ -9,8 +9,6 @@ export interface GroupResponse {
   id: number;
   name: string;
   membership: GroupMembership;
-  /** 벌칙 내용 */
-  penalty: string;
   /** 방장 포함 가용 최대 인원 (2~5) */
   maxMemberCount: number;
   currentMemberCount: number;
@@ -29,7 +27,6 @@ export interface GroupResponse {
 export interface GroupMemberResponse {
   userId: number;
   nickname: string;
-  email: string;
   /** 그룹 응답과 같은 이유로 owner 로 내려온다 */
   owner?: boolean;
   isOwner?: boolean;
@@ -53,10 +50,8 @@ export interface GroupJoinResult {
 }
 
 export interface CreateGroupRequest {
-  /** 1~10자 */
+  /** 최대 10자 */
   name: string;
-  /** 1~200자 */
-  penalty: string;
   /** 방장 포함 2~5 */
   maxMemberCount: number;
 }

@@ -19,6 +19,7 @@ import {
 } from "@/hooks/useKakaoPostcode";
 import { setAccessToken } from "@/apis/tokenStore";
 import { useAuth } from "@/hooks/useAuth";
+import { landingAfterAuth } from "@/utils/inviteRedirect";
 import turtleCheer from "@/assets/mascots/turtle-cheer.png";
 import turtleTodayComplete from "@/assets/mascots/turtle-today-complete.png";
 
@@ -132,7 +133,7 @@ function OnboardingPage() {
 
       setAccessToken(accessToken);
       markAuthenticated();
-      navigate("/", { replace: true });
+      navigate(landingAfterAuth(), { replace: true });
     } catch (caught) {
       setIsSubmitting(false);
       setSubmitError(getSignupErrorMessage(caught));

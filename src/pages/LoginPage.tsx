@@ -11,12 +11,14 @@ type LoginStatus = "idle" | "loading" | "error";
 function LoginPage() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<LoginStatus>(searchParams.get("error") ? "error" : "idle");
+  // 초대 링크로 들어왔으면 코드를 같이 넘겨 서버가 로그인 직후 그룹에 넣어 준다
+  const inviteCode = searchParams.get("inviteCode")?.trim() || undefined;
 
   const handleSelect = async (provider: SocialProvider) => {
     setStatus("loading");
 
     try {
-      const authorizeUrl = await getAuthorizeUrl(provider);
+      const authorizeUrl = await getAuthorizeUrl(provider, inviteCode);
       window.location.href = authorizeUrl;
     } catch {
       setStatus("error");

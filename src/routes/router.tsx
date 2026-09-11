@@ -3,6 +3,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import CalendarPage from "@/pages/CalendarPage";
 import ExerciseCompletePage from "@/pages/ExerciseCompletePage";
 import ExercisePage from "@/pages/ExercisePage";
+import GroupJoinPage from "@/pages/GroupJoinPage";
 import GroupPage from "@/pages/GroupPage";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
@@ -25,6 +26,12 @@ export const router = createBrowserRouter([
       {
         path: "/splash",
         element: <SplashPage />,
+        handle: { header: false, fullBleed: true } satisfies LayoutHandle,
+      },
+      {
+        // 초대 링크가 가리키는 주소. 로그인 여부를 화면이 직접 판단하므로 가드를 걸지 않는다
+        path: "/groups/join",
+        element: <GroupJoinPage />,
         handle: { header: false, fullBleed: true } satisfies LayoutHandle,
       },
       {

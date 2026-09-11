@@ -251,11 +251,13 @@ function GroupPage() {
         <GroupSettingsSheet
           open={openSheet === "settings"}
           group={group}
-          isInviteLinkPending={!inviteLinkQuery.data}
+          isInviteLinkPending={inviteLinkQuery.isPending}
           onClose={closeSheet}
           onCopyLink={() => {
             const link = inviteLinkQuery.data?.inviteLink;
+            // 링크를 못 받았으면 조용히 넘기지 말고 이유를 알려 준다
             if (link) void copyInviteLink(link);
+            else toast.show(toGroupErrorMessage(inviteLinkQuery.error));
           }}
           onDelete={() => setIsDeleteOpen(true)}
         />

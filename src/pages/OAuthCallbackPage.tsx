@@ -4,6 +4,7 @@ import { handleOAuthCallback, refreshAccessToken, type SocialProvider } from "@/
 import { setAccessToken } from "@/apis/tokenStore";
 import BootSplash from "@/components/common/BootSplash";
 import { useAuth } from "@/hooks/useAuth";
+import { landingAfterAuth } from "@/utils/inviteRedirect";
 
 function OAuthCallbackPage() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ function OAuthCallbackPage() {
         const { accessToken } = await refreshAccessToken();
         setAccessToken(accessToken);
         markAuthenticated();
-        navigate("/", { replace: true });
+        navigate(landingAfterAuth(), { replace: true });
       } catch {
         navigate("/login?error=oauth", { replace: true });
       }
