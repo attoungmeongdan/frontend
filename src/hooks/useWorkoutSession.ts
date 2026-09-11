@@ -122,12 +122,18 @@ export function useWorkoutSession({
   const moveToCompleted = useCallback(
     (sessionId: number) => {
       if (completedRef.current) return;
+      const completedMeasurementGroupId = sessionRef.current?.measurementGroupId;
       completedRef.current = true;
       closeSocket();
+      sessionRef.current = null;
+      setAnalysis(null);
+      setConnectionError(null);
+      setRetryAction("start");
+      updateConnectionState("idle");
       void queryClient.invalidateQueries({ queryKey: ["recent-seven-days"] });
-      onCompletedRef.current(sessionId, sessionRef.current?.measurementGroupId);
+      onCompletedRef.current(sessionId, completedMeasurementGroupId);
     },
-    [closeSocket, queryClient],
+    [closeSocket, queryClient, updateConnectionState],
   );
 
   const verifyCompletedResult = useCallback(
@@ -348,14 +354,29 @@ export function useWorkoutSession({
       moveToCompleted(sessionId);
     } catch (error) {
       try {
-        await verifyCompletedResult(sessionId);
+        const result = await getWorkoutSessionResult(sessionId);
+        if (result.status === "COMPLETED") {
+          moveToCompleted(sessionId);
+          return;
+        }
+        if (result.status === "EXPIRED" || result.status === "CANCELLED") {
+          closeSocket();
+          sessionRef.current = null;
+          setConnectionError(
+            "자세 인식이 오래 끊겨 세션이 종료됐어요. 새 세션으로 다시 시작해 주세요.",
+          );
+          setRetryAction("start");
+          updateConnectionState("error");
+          return;
+        }
+        throw new Error("운동 기록 저장이 아직 완료되지 않았어요.");
       } catch {
         setConnectionError(errorMessage(error, "운동 기록을 저장하지 못했어요."));
         setRetryAction("complete");
         updateConnectionState("error");
       }
     }
-  }, [mode, moveToCompleted, updateConnectionState, verifyCompletedResult]);
+  }, [closeSocket, mode, moveToCompleted, updateConnectionState]);
 
   const retry = useCallback(() => {
     const sessionId = sessionRef.current?.sessionId;
@@ -384,8 +405,21 @@ export function useWorkoutSession({
       void complete();
       return;
     }
-    void start();
-  }, [complete, connectSocket, retryAction, start, updateConnectionState, verifyCompletedResult]);
+    attemptRef.current += 1;
+    closeSocket();
+    sessionRef.current = null;
+    completedRef.current = false;
+    setAnalysis(null);
+    setConnectionError(null);
+    updateConnectionState("idle");
+  }, [
+    closeSocket,
+    complete,
+    connectSocket,
+    retryAction,
+    updateConnectionState,
+    verifyCompletedResult,
+  ]);
 
   const cancel = useCallback(() => {
     attemptRef.current += 1;
@@ -408,10 +442,11 @@ export function useWorkoutSession({
     connectionError,
     retryLabel:
       retryAction === "start"
-        ? "새 세션으로 다시 시작"
+        ? "시작 자세 다시 잡기"
         : retryAction === "socket"
           ? "WebSocket 다시 연결"
           : "저장 다시 시도",
+    shouldReacquireStartPose: retryAction === "start",
     diagnostics,
     socketTicketLength: sessionRef.current?.socketTicket?.length ?? 0,
     start,

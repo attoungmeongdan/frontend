@@ -14,14 +14,14 @@ const STATUS_CONTENT = {
   loading: {
     icon: LoaderCircle,
     title: "카메라를 준비하고 있어요",
-    description: "카메라와 자세 인식 모델을 불러오는 동안 잠시만 기다려 주세요.",
+    description: "카메라와 자세 인식 모델을 불러오는 동안\n잠시만 기다려 주세요.",
     primaryLabel: "준비 중",
   },
   "permission-request": {
     icon: Camera,
     title: "카메라 사용이 필요해요",
     description: "동작을 세어 드리려면 카메라로 자세를 봐야 해요. 영상은 저장하지 않아요.",
-    primaryLabel: "카메라 허용하고 진행",
+    primaryLabel: "카메라 권한 허용",
   },
   "permission-denied": {
     icon: CameraOff,
@@ -69,7 +69,9 @@ function CameraStatusScreen({ state, onPrimary, onHome }: CameraStatusScreenProp
         />
         <div className="flex flex-col gap-3">
           <h1 className="text-heading-2 text-text-primary">{title}</h1>
-          <p className="text-body text-text-secondary max-w-82">{description}</p>
+          <p className="text-body text-text-secondary max-w-82 whitespace-pre-line">
+            {description}
+          </p>
         </div>
       </div>
 
@@ -78,7 +80,7 @@ function CameraStatusScreen({ state, onPrimary, onHome }: CameraStatusScreenProp
           {primaryLabel}
         </Button>
         <Button type="button" variant="secondary" onClick={onHome}>
-          {state === "permission-request" ? "나중에 할게요 (홈으로)" : "홈으로 돌아가기"}
+          {state === "permission-request" ? "나중에 할게요" : "홈으로 돌아가기"}
         </Button>
       </div>
     </section>
