@@ -103,16 +103,16 @@ function CameraStage({
       {warning && (
         <div
           role="alert"
-          className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 px-4"
+          className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center px-4"
         >
           <div className="opacity-50" aria-hidden>
             <TriangleAlert
-              size={192}
+              size={288}
               strokeWidth={2.25}
-              className="text-accent-yellow motion-safe:animate-pulse landscape:size-[min(10.5rem,calc(100dvh-12.5rem))]"
+              className="text-accent-yellow motion-safe:animate-pulse landscape:size-[min(15.75rem,calc(150dvh-18.75rem))]"
             />
           </div>
-          <p className="bg-camera-scrim text-body-small rounded-sm px-4 py-2 text-center font-semibold">
+          <p className="bg-camera-scrim text-body-small -mt-2 rounded-sm px-4 py-2 text-center font-semibold">
             {WARNING_MESSAGE[warning]}
           </p>
         </div>
