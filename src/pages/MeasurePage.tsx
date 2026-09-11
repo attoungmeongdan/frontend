@@ -186,7 +186,15 @@ function MeasurePage() {
         overlay={overlay}
         cancelDisabled={session.connectionState === "completing"}
         onCancel={moveHome}
-      />
+      >
+        {import.meta.env.DEV && (
+          <output className="bg-camera-scrim text-caption absolute right-2 bottom-2 z-20 rounded-sm px-2 py-1 text-white/80">
+            start:{startPose.isMatching ? "match" : "wait"} · ws:{session.connectionState} · phase:
+            {session.analysis?.phase ?? "-"} · send:{session.diagnostics.sentFrames}/
+            {session.diagnostics.transmissionFps}fps · sid:{session.diagnostics.sessionId ?? "-"}
+          </output>
+        )}
+      </CameraStage>
       {phase === "intro" && (
         <MascotModal
           mascot={turtleGuide}

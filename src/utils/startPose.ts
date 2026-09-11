@@ -1,7 +1,7 @@
 import type { ExerciseType } from "@/constants/exercises";
 import type { PoseLandmarkPayload } from "@/types/exercise";
 
-const MIN_VISIBILITY = 0.55;
+const MIN_VISIBILITY = 0.6;
 
 function angle(
   first: PoseLandmarkPayload,
@@ -58,23 +58,23 @@ function matchesSide(
   switch (exerciseType) {
     case "chair-stand":
       return (
-        kneeAngle >= 155 &&
-        hipAngle >= 145 &&
+        kneeAngle >= 150 &&
+        hipAngle >= 150 &&
         Math.abs(shoulder.y - ankle.y) > Math.abs(shoulder.x - ankle.x)
       );
     case "push-up":
       return (
         angle(shoulder, elbow, wrist) >= 150 &&
-        angle(shoulder, hip, ankle) >= 150 &&
+        angle(shoulder, hip, ankle) >= 160 &&
         isHorizontal(shoulder, ankle)
       );
     case "sit-up":
-      return hipAngle >= 140 && kneeAngle <= 125 && isHorizontal(shoulder, hip);
+      return hipAngle >= 145 && kneeAngle <= 125 && isHorizontal(shoulder, hip);
     case "plank": {
       const elbowAngle = angle(shoulder, elbow, wrist);
       return (
-        angle(shoulder, hip, ankle) >= 150 &&
-        kneeAngle >= 150 &&
+        angle(shoulder, hip, ankle) >= 160 &&
+        kneeAngle >= 160 &&
         elbowAngle >= 55 &&
         elbowAngle <= 125 &&
         isHorizontal(shoulder, ankle)

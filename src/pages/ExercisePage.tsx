@@ -161,8 +161,8 @@ function ExerciseSessionPage({ exercise }: { exercise: Exercise }) {
           camera:{camera.diagnostics.cameraReady ? "ok" : "wait"} · model:
           {camera.diagnostics.modelReady ? "ok" : "wait"} · joints:
           {camera.diagnostics.landmarkCount} · infer:{camera.diagnostics.inferenceFps}fps · ws:
-          {workout.connectionState} · send:{workout.diagnostics.sentFrames}/
-          {workout.diagnostics.transmissionFps}fps · recv:
+          {workout.connectionState} · phase:{workout.analysis?.phase ?? "-"} · send:
+          {workout.diagnostics.sentFrames}/{workout.diagnostics.transmissionFps}fps · recv:
           {workout.diagnostics.lastReceivedAt
             ? new Date(workout.diagnostics.lastReceivedAt).toLocaleTimeString()
             : "-"}
